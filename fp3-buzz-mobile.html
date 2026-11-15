@@ -1,0 +1,3473 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FP3 BUZZ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>FP3 BUZZ — 眺めるだけで脳に刺さるFP3級ライブ＆SNS</title>
+  <style>:root {
+  --bg: #000000;
+  --panel: #0d1117;
+  --card: #16181c;
+  --border: #2f3336;
+  --text: #e7e9ea;
+  --muted: #71767b;
+  --xblue: #1d9bf0;
+  --fact: #00ba7c;
+  --fake: #f91880;
+  --gold: #ffd400;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+#fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ---------- プッシュ通知風トースト ---------- */
+.push-toast {
+  position: fixed;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  background: rgba(29, 155, 240, 0.95);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 30px rgba(29, 155, 240, 0.45);
+  transition: top 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.push-toast.show {
+  top: 16px;
+}
+
+/* ---------- 3カラムシェル ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 600px) 300px;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------- 左サイドバー ---------- */
+.sidebar-left {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+}
+
+.brand-logo {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.brand-name {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, var(--xblue), var(--fact));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.profile-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.my-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--xblue), var(--fake));
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.my-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.88rem;
+}
+
+.badge-blue {
+  color: var(--xblue);
+  font-size: 0.85rem;
+}
+
+.badge-gold {
+  color: var(--gold);
+}
+
+.my-handle {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.profile-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.profile-metrics b {
+  display: block;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-metrics span {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-item.active {
+  font-weight: 800;
+  color: var(--xblue);
+  background: rgba(29, 155, 240, 0.12);
+}
+
+.nav-count {
+  margin-left: auto;
+  background: var(--fake);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.side-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.field-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.f-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.f-chip.active {
+  background: var(--text);
+  color: #000000;
+  border-color: var(--text);
+}
+
+.pill-toggle {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* ---------- 中央メインカラム ---------- */
+.main-col {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.top-bar-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.combo-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 212, 0, 0.14);
+  border: 1px solid rgba(255, 212, 0, 0.4);
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.mobile-bar, .mobile-chips, .mobile-nav {
+  display: none;
+}
+
+.view-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-pane[hidden] {
+  display: none;
+}
+
+/* ---------- 1. スワイプ仕分けビュー ---------- */
+.swipe-hint-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 18px 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hint-left { color: var(--fake); }
+.hint-mid { color: var(--muted); }
+.hint-right { color: var(--fact); }
+
+.deck-stage {
+  position: relative;
+  flex: 1;
+  min-height: 360px;
+  margin: 12px 18px;
+  display: grid;
+  place-items: center;
+}
+
+.swipe-card {
+  position: absolute;
+  width: 100%;
+  max-width: 460px;
+  min-height: 320px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+  touch-action: none;
+  cursor: grab;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.65);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.swipe-card.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.swipe-card.behind {
+  transform: scale(0.95) translateY(12px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.card-stamp {
+  position: absolute;
+  top: 22px;
+  padding: 4px 14px;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  border: 3px solid;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stamp-fact {
+  left: 20px;
+  color: var(--fact);
+  border-color: var(--fact);
+  transform: rotate(-12deg);
+}
+
+.stamp-fake {
+  right: 20px;
+  color: var(--fake);
+  border-color: var(--fake);
+  transform: rotate(12deg);
+}
+
+.sc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sc-field {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #000000;
+}
+
+.sc-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.sc-question {
+  font-size: 1.18rem;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 18px 0;
+}
+
+.sc-footer {
+  font-size: 0.76rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.swipe-actions {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 6px 18px 16px;
+}
+
+.act-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 64px;
+  border-radius: 18px;
+  font-weight: 900;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.act-btn:active {
+  transform: scale(0.94);
+}
+
+.act-fake {
+  color: var(--fake);
+  border-color: rgba(249, 24, 128, 0.4);
+}
+.act-fake:hover { background: rgba(249, 24, 128, 0.12); }
+
+.act-fact {
+  color: var(--fact);
+  border-color: rgba(0, 186, 124, 0.4);
+}
+.act-fact:hover { background: rgba(0, 186, 124, 0.12); }
+
+.act-btn span {
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+.act-btn small {
+  font-size: 0.72rem;
+}
+
+.swipe-feedback {
+  margin: 0 18px 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  border-left: 4px solid var(--xblue);
+  font-size: 0.86rem;
+}
+
+.swipe-feedback.ok { border-left-color: var(--fact); }
+.swipe-feedback.ng { border-left-color: var(--fake); }
+.swipe-feedback b { display: block; margin-bottom: 3px; }
+.swipe-feedback p { margin: 0; color: var(--muted); font-size: 0.8rem; }
+
+/* ---------- 2. タイムラインビュー（X風） ---------- */
+.timeline-feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.post-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: #000;
+  font-weight: 800;
+}
+
+.post-author {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.post-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.post-body {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+
+.post-options {
+  display: grid;
+  gap: 8px;
+}
+
+.post-opt {
+  text-align: left;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.post-opt:hover:not(:disabled) {
+  border-color: var(--xblue);
+  background: rgba(29, 155, 240, 0.08);
+}
+
+.post-opt.is-ok {
+  border-color: var(--fact);
+  background: rgba(0, 186, 124, 0.16);
+}
+
+.post-opt.is-ng {
+  border-color: var(--fake);
+  background: rgba(249, 24, 128, 0.16);
+}
+
+.comm-note {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #11161d;
+  border: 1px solid var(--border);
+  font-size: 0.84rem;
+}
+
+.comm-note-head {
+  font-weight: 800;
+  color: var(--xblue);
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.comm-note-point {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.comm-note-trap {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.load-more-btn {
+  margin: 16px;
+  padding: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--xblue);
+  font-weight: 800;
+}
+
+/* ---------- 3. 30秒 RUSH ビュー ---------- */
+.rush-arena {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.rush-fire { font-size: 3.2rem; }
+.rush-best { margin: 14px 0 20px; color: var(--gold); font-size: 0.95rem; }
+
+.primary-cta {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 999px;
+  background: var(--xblue);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.rush-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.rush-timer {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.rush-score {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.rush-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.rush-tag {
+  font-size: 0.78rem;
+  color: var(--xblue);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.rush-q {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.rush-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.rush-btns .act-btn {
+  width: 100%;
+  height: 60px;
+  flex-direction: row;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+.rush-res-num {
+  font-size: 2.4rem;
+  margin: 8px 0;
+  color: var(--fact);
+}
+
+.rush-res-gain {
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+/* ---------- 4. 弱点ノートビュー ---------- */
+.notes-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.note-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.note-clear-btn {
+  color: var(--fact);
+  font-weight: 800;
+  font-size: 0.76rem;
+}
+
+/* ---------- 右サイドバー ---------- */
+.sidebar-right {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.widget h3 {
+  margin: 0 0 12px;
+  font-size: 0.94rem;
+}
+
+.mastery-row {
+  margin-bottom: 9px;
+}
+
+.mastery-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 3px;
+}
+
+.mastery-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mastery-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.trend-item {
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.trend-item:last-child { border-bottom: none; }
+.trend-cat { font-size: 0.72rem; color: var(--muted); }
+.trend-word { font-size: 0.86rem; font-weight: 800; }
+.trend-cnt { font-size: 0.72rem; color: var(--xblue); }
+
+.danger-link {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: left;
+  padding: 4px 8px;
+}
+
+.danger-link:hover { color: var(--fake); }
+
+/* ---------- レスポンシブ（スマホ・狭幅） ---------- */
+@media (max-width: 1000px) {
+  .shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .sidebar-right {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-left {
+    display: none;
+  }
+  .main-col {
+    border-right: none;
+    padding-bottom: 64px;
+  }
+  .mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+  .mobile-chips {
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: #080b10;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-chips::-webkit-scrollbar { display: none; }
+  .mobile-chips .f-chip {
+    flex: none;
+  }
+  .live-split {
+    height: calc(100dvh - 172px - env(safe-area-inset-bottom));
+  }
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    background: rgba(0, 0, 0, 0.94);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .m-nav-btn {
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .m-nav-btn.active {
+    color: var(--xblue);
+    font-weight: 800;
+  }
+}
+
+/* ---------- 5. 図解アニメビュー & インライン図解 ---------- */
+.diagrams-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diag-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.diag-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.diag-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.diag-sub {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.diag-replay {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--xblue);
+}
+
+.diag-stage {
+  background: #0b0e14;
+  border-radius: 14px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.diag-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* SVG キーフレームアニメーション */
+.diag-seesaw .seesaw-arm {
+  transform-origin: 180px 119px;
+  animation: seesawTilt 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes seesawTilt {
+  0% { transform: rotate(-7deg); }
+  100% { transform: rotate(7deg); }
+}
+
+.diag-instax .tax-row {
+  opacity: 0;
+  animation: rowReveal 0.45s ease forwards;
+}
+.diag-instax .row-1 { animation-delay: 0.1s; }
+.diag-instax .row-2 { animation-delay: 0.45s; }
+.diag-instax .row-3 { animation-delay: 0.8s; }
+
+@keyframes rowReveal {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.diag-pension rect {
+  transform-origin: center 130px;
+  animation: barRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.diag-pension .bar-grow-2 { animation-delay: 0.2s; }
+.diag-pension .bar-grow-3 { animation-delay: 0.4s; }
+
+@keyframes barRise {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.diag-soneki .soneki-slide {
+  animation: sonekiPull 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes sonekiPull {
+  0% { transform: translateX(12px); }
+  100% { transform: translateX(-10px); }
+}
+
+.diag-bldg .bldg-floor-2 {
+  opacity: 0;
+  animation: floorPop 0.5s 0.3s ease forwards;
+}
+.diag-bldg .bldg-floor-3 {
+  opacity: 0;
+  animation: floorPop 0.5s 0.65s ease forwards;
+}
+
+@keyframes floorPop {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.diag-timeline .tl-progress {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: tlDraw 1.6s ease-out forwards;
+}
+
+@keyframes tlDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.inline-diag-btn {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(29, 155, 240, 0.14);
+  color: var(--xblue);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.inline-diag-wrap {
+  margin-top: 8px;
+  background: #0b0e14;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+/* ---------- 0. ライブ劇場（受動×論破×物理ピンボール Split-Screen） ---------- */
+.live-split {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 53px);
+  height: calc(100dvh - 53px);
+  overflow: hidden;
+}
+
+.live-top {
+  position: relative;
+  flex: 1.35;
+  min-height: 0;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: radial-gradient(circle at 50% 10%, rgba(29, 155, 240, 0.14), transparent 70%), #05070c;
+  border-bottom: 2px solid #1f242d;
+  overflow: hidden;
+}
+
+.live-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(249, 24, 128, 0.18);
+  border: 1px solid rgba(249, 24, 128, 0.45);
+  color: #ff4d94;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f91880;
+  box-shadow: 0 0 8px #f91880;
+  animation: pulseDot 1s infinite alternate;
+}
+
+@keyframes pulseDot {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+.live-cat-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.live-ctrl-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.mini-ctrl {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.drama-bubble {
+  position: relative;
+  z-index: 2;
+  background: #141923;
+  border: 1.5px solid #2b3548;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  animation: popIn 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.drama-speaker {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.drama-text {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.48;
+}
+
+.live-center-stage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.judge-box {
+  background: rgba(22, 24, 28, 0.92);
+  border: 1.5px solid rgba(255, 212, 0, 0.45);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.judge-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.judge-bar-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.judge-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--fake));
+  transform-origin: left;
+}
+
+.judge-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.judge-btn {
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: #1f2633;
+  border: 1.5px solid #38465e;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.35;
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.judge-btn:hover {
+  border-color: var(--xblue);
+  background: rgba(29, 155, 240, 0.16);
+}
+
+.judge-btn:active {
+  transform: scale(0.96);
+}
+
+/* キネティック字幕（1〜3語が巨大バウンス） */
+.kinetic-box {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.kinetic-word {
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 0 22px rgba(29, 155, 240, 0.85), 0 4px 12px rgba(0, 0, 0, 0.9);
+  padding: 4px 12px;
+}
+
+.kinetic-word.pop {
+  animation: kineticBounce 0.36s cubic-bezier(0.18, 0.89, 0.32, 1.35);
+}
+
+.kinetic-word.highlight {
+  color: var(--gold);
+  font-size: 1.72rem;
+  text-shadow: 0 0 26px rgba(255, 212, 0, 0.85);
+}
+
+@keyframes kineticBounce {
+  0% { opacity: 0; transform: scale(0.45) rotate(-3deg); }
+  70% { opacity: 1; transform: scale(1.08) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.kinetic-summary {
+  font-size: 0.82rem;
+  color: #c9d4e5;
+  background: rgba(13, 17, 23, 0.88);
+  border-left: 3px solid var(--fact);
+  padding: 7px 11px;
+  border-radius: 8px;
+  max-width: 96%;
+  text-align: left;
+}
+
+.kinetic-diag {
+  width: 100%;
+  max-width: 320px;
+}
+
+.kinetic-diag svg {
+  max-height: 115px;
+  width: 100%;
+}
+
+/* ライブコメント弾幕（右下オーバーレイ） */
+.live-comments {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  width: 210px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 3;
+}
+
+.live-cmt {
+  align-self: flex-end;
+  background: rgba(0, 0, 0, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: #e7e9ea;
+  animation: cmtFloat 2.8s ease-out forwards;
+}
+
+@keyframes cmtFloat {
+  0% { opacity: 0; transform: translateY(10px); }
+  15% { opacity: 0.95; transform: translateY(0); }
+  85% { opacity: 0.95; }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+
+/* 下半分：物理ピンボールマイニング盤 */
+.plinko-bottom {
+  flex: 1;
+  min-height: 185px;
+  background: #070a10;
+  display: flex;
+  flex-direction: column;
+}
+
+.plinko-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background: #0e131d;
+  border-bottom: 1px solid #1f2738;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.plinko-money {
+  color: var(--gold);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#plinko-canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+  <div id="push-toast" class="push-toast" aria-live="polite"></div>
+  <canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+  <div class="shell">
+    <!-- 左サイドバー：アカウント＆モード切替 -->
+    <aside class="sidebar-left">
+      <div class="brand">
+        <span class="brand-logo">𝕏</span>
+        <span class="brand-name">FP3 BUZZ</span>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="my-avatar" id="my-avatar">FP</div>
+          <div>
+            <div class="my-name-row">
+              <b id="my-rank-name">見習いアカウント</b>
+              <span id="my-badge" class="badge-blue" hidden>✔</span>
+            </div>
+            <div class="my-handle">@fp3_challenger</div>
+          </div>
+        </div>
+        <div class="profile-metrics">
+          <div><b id="stat-followers">0</b><span>フォロワー</span></div>
+          <div><b id="stat-imp">0</b><span>総資産(万)</span></div>
+          <div><b id="stat-streak">0</b><span>日連続</span></div>
+        </div>
+      </div>
+
+      <nav class="nav-menu" aria-label="モード切替">
+        <button type="button" class="nav-item active" data-view="live">
+          <span class="nav-ico">📺</span>
+          <span>ライブ劇場 (放置OK)</span>
+        </button>
+        <button type="button" class="nav-item" data-view="swipe">
+          <span class="nav-ico">⚡</span>
+          <span>スワイプ仕分け</span>
+        </button>
+        <button type="button" class="nav-item" data-view="timeline">
+          <span class="nav-ico">💬</span>
+          <span>タイムライン</span>
+        </button>
+        <button type="button" class="nav-item" data-view="rush">
+          <span class="nav-ico">🔥</span>
+          <span>30秒RUSH</span>
+        </button>
+        <button type="button" class="nav-item" data-view="diagrams">
+          <span class="nav-ico">🎬</span>
+          <span>図解アニメ</span>
+        </button>
+        <button type="button" class="nav-item" data-view="notes">
+          <span class="nav-ico">📌</span>
+          <span>弱点ノート</span>
+          <span class="nav-count" id="weak-count" hidden>0</span>
+        </button>
+      </nav>
+
+      <div class="field-filter-wrap">
+        <div class="side-label">出題ジャンル</div>
+        <div class="field-chips" id="field-chips"></div>
+      </div>
+
+      <div class="sound-row">
+        <button type="button" class="pill-toggle" id="btn-sound">🔊 音・読み上げ ON</button>
+      </div>
+    </aside>
+
+    <!-- 中央メインエリア -->
+    <main class="main-col">
+      <header class="top-bar">
+        <div class="top-bar-title" id="view-title">📺 ライブ劇場（受動×論破）</div>
+        <div class="combo-pill" id="combo-pill">🔥 0 COMBO</div>
+      </header>
+
+      <!-- モバイル用コンパクトステータス & ジャンルバー -->
+      <div class="mobile-bar">
+        <span>👤 <b id="m-followers">0</b></span>
+        <span>💰 <b id="m-imp">120</b>万</span>
+        <span>🔥 <b id="m-combo">0</b>連続</span>
+        <button type="button" id="m-sound" class="m-btn">🔊</button>
+      </div>
+      <div class="mobile-chips" id="mobile-field-chips" aria-label="ジャンル切替"></div>
+
+      <!-- 0. ライブ劇場ビュー（上：自動進行チャット劇＆キネティック字幕 / 下：物理ピンボール） -->
+      <section id="view-live" class="view-pane active">
+        <div class="live-split">
+          <!-- 上半分：修羅場チャット＆キネティック字幕＆図解 -->
+          <div class="live-top">
+            <div class="live-header-bar">
+              <span class="live-pill"><i class="live-dot"></i> LIVE · <b id="live-viewers">4,280</b>人視聴</span>
+              <span class="live-cat-tag" id="live-cat-tag">ライフ</span>
+              <div class="live-ctrl-btns">
+                <button type="button" class="mini-ctrl" id="btn-live-pause">⏸ 一時停止</button>
+                <button type="button" class="mini-ctrl" id="btn-live-skip">⏭ 次へ</button>
+              </div>
+            </div>
+
+            <!-- 相談者の吹き出し -->
+            <div class="drama-bubble" id="live-drama-bubble">
+              <div class="drama-speaker" id="live-speaker">🦆 相談者</div>
+              <p class="drama-text" id="live-chat-text">読み込み中…</p>
+            </div>
+
+            <!-- ステージ中央：3.5秒の論破チャンス OR キネティック字幕＆図解 -->
+            <div class="live-center-stage">
+              <!-- A. 3.5秒論破介入ボックス（放置でも自動で進む） -->
+              <div class="judge-box" id="live-judge-box" hidden>
+                <div class="judge-head">
+                  <span>⚡ 論破チャンス！（放置でも自動解説へ進みます）</span>
+                  <b id="judge-sec">3.5s</b>
+                </div>
+                <div class="judge-bar-track"><div class="judge-bar-fill" id="judge-bar-fill"></div></div>
+                <div class="judge-btns">
+                  <button type="button" class="judge-btn" id="live-opt-a"></button>
+                  <button type="button" class="judge-btn" id="live-opt-b"></button>
+                </div>
+              </div>
+
+              <!-- B. キネティック字幕＆結論・ミニ図解 -->
+              <div class="kinetic-box" id="live-kinetic-box" hidden>
+                <div class="kinetic-word" id="kinetic-word"></div>
+                <div class="kinetic-summary" id="kinetic-summary"></div>
+                <div class="kinetic-diag" id="kinetic-diag"></div>
+              </div>
+            </div>
+
+            <!-- ニコニコ/TikTok Live風の視聴者コメントストリーム -->
+            <div class="live-comments" id="live-comments" aria-hidden="true"></div>
+          </div>
+
+          <!-- 下半分：常時動く物理ピンボール（Sludge / Split-Screen Retention） -->
+          <div class="plinko-bottom">
+            <div class="plinko-bar">
+              <span>🎰 資産マイニング盤（見てるだけで玉が落ちる・論破で大量投下）</span>
+              <b class="plinko-money">総資産 ¥<span id="plinko-yen">120</span>万</b>
+            </div>
+            <canvas id="plinko-canvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. スワイプ仕分けビュー（Tinder / TikTok 式物理ドラッグ） -->
+      <section id="view-swipe" class="view-pane" hidden>
+        <div class="swipe-hint-bar">
+          <span class="hint-left">← ウソ (×)</span>
+          <span class="hint-mid">カードを左右に弾く / キー ← →</span>
+          <span class="hint-right">ホント (○) →</span>
+        </div>
+
+        <div class="deck-stage" id="deck-stage">
+          <div class="deck-empty" id="deck-empty" hidden></div>
+        </div>
+
+        <div class="swipe-actions">
+          <button type="button" class="act-btn act-fake" id="btn-fake" aria-label="ウソ（誤り）">
+            <span>✕</span><small>ウソ</small>
+          </button>
+          <button type="button" class="act-btn act-fact" id="btn-fact" aria-label="ホント（正しい）">
+            <span>○</span><small>ホント</small>
+          </button>
+        </div>
+
+        <div class="swipe-feedback" id="swipe-feedback" hidden></div>
+      </section>
+
+      <!-- 2. タイムラインビュー（X風の無限フィード＋コミュニティノート） -->
+      <section id="view-timeline" class="view-pane" hidden>
+        <div class="timeline-feed" id="timeline-feed"></div>
+      </section>
+
+      <!-- 3. 30秒RUSHビュー（アーケード・タイムアタック） -->
+      <section id="view-rush" class="view-pane" hidden>
+        <div class="rush-arena" id="rush-arena">
+          <div class="rush-intro" id="rush-intro">
+            <div class="rush-fire">🔥</div>
+            <h2>30秒 RUSH チャレンジ</h2>
+            <p>制限時間30秒！○×問題を高速でさばききれ。<br>正解で <b>+1秒</b>、連続コンボでフォロワー爆増！</p>
+            <div class="rush-best">ハイスコア: <b id="rush-best-score">0</b> 問</div>
+            <button type="button" class="primary-cta" id="btn-rush-start">RUSH スタート</button>
+          </div>
+
+          <div class="rush-play" id="rush-play" hidden>
+            <div class="rush-hud">
+              <div class="rush-timer" id="rush-timer">30.0</div>
+              <div class="rush-score">正解 <b id="rush-score-num">0</b></div>
+            </div>
+            <div class="rush-card" id="rush-card">
+              <span class="rush-tag" id="rush-tag"></span>
+              <p class="rush-q" id="rush-q"></p>
+            </div>
+            <div class="rush-btns">
+              <button type="button" class="act-btn act-fake" id="rush-btn-fake">✕ ウソ</button>
+              <button type="button" class="act-btn act-fact" id="rush-btn-fact">○ ホント</button>
+            </div>
+          </div>
+
+          <div class="rush-result" id="rush-result" hidden>
+            <h2 id="rush-res-title">TIME UP!</h2>
+            <p class="rush-res-num"><b id="rush-res-score">0</b> 問正解</p>
+            <p id="rush-res-gain" class="rush-res-gain"></p>
+            <button type="button" class="primary-cta" id="btn-rush-retry">もう1回挑戦</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 図解アニメビュー -->
+      <section id="view-diagrams" class="view-pane" hidden>
+        <div class="diagrams-list" id="diagrams-list"></div>
+      </section>
+
+      <!-- 5. 弱点ノートビュー -->
+      <section id="view-notes" class="view-pane" hidden>
+        <div class="notes-list" id="notes-list"></div>
+      </section>
+
+      <!-- モバイル下部ナビ -->
+      <nav class="mobile-nav" aria-label="モバイルメニュー">
+        <button type="button" class="m-nav-btn active" data-view="live">📺<span>劇場</span></button>
+        <button type="button" class="m-nav-btn" data-view="swipe">⚡<span>仕分け</span></button>
+        <button type="button" class="m-nav-btn" data-view="timeline">💬<span>TL</span></button>
+        <button type="button" class="m-nav-btn" data-view="rush">🔥<span>RUSH</span></button>
+        <button type="button" class="m-nav-btn" data-view="diagrams">🎬<span>図解</span></button>
+        <button type="button" class="m-nav-btn" data-view="notes">📌<span>ノート</span></button>
+      </nav>
+    </main>
+
+    <!-- 右サイドバー：トレンド＆分野別正答率 -->
+    <aside class="sidebar-right">
+      <div class="widget">
+        <h3>📱 スマホで開く（同一Wi-Fi）</h3>
+        <p style="margin:0 0 6px; font-size:0.76rem; color:var(--muted);">スマホのブラウザで下記URLを開くか、「ホーム画面に追加」でアプリ化できます：</p>
+        <code style="display:block; padding:8px; border-radius:8px; background:#0b0e14; color:var(--xblue); font-weight:800; font-size:0.82rem; user-select:all;">http://192.168.0.14:8002</code>
+      </div>
+
+      <div class="widget">
+        <h3>📈 分野別マスター度</h3>
+        <div id="mastery-list" class="mastery-list"></div>
+      </div>
+
+      <div class="widget">
+        <h3>🔥 FP3級 トレンド</h3>
+        <div id="trend-list" class="trend-list"></div>
+      </div>
+
+      <button type="button" class="danger-link" id="btn-reset">データをリセット</button>
+    </aside>
+  </div>
+
+  <script>window.FP3_FIELDS = {
+  life: { name: 'ライフ', handle: '@fp3_life', color: '#38bdf8', icon: '🧭' },
+  risk: { name: 'リスク', handle: '@fp3_risk', color: '#f472b6', icon: '🛡️' },
+  fin:  { name: '金融',   handle: '@fp3_fin',  color: '#fbbf24', icon: '📈' },
+  tax:  { name: 'タックス', handle: '@fp3_tax', color: '#4ade80', icon: '🧾' },
+  re:   { name: '不動産', handle: '@fp3_real', color: '#fb923c', icon: '🏠' },
+  inh:  { name: '相続',   handle: '@fp3_inh',  color: '#a78bfa', icon: '📜' }
+};
+
+window.FP3_RUSH_QUESTIONS = [
+  // ===== 1. ライフプランニングと資金計画 =====
+  {
+    id: 'L01', f: 'life', t: 'ox', badge: '頻出★3',
+    q: 'ファイナンシャル・プランナー（FP）の資格を持っていれば、顧客の具体的な税務書類の作成を無償で引き受けることができる。',
+    a: false,
+    point: '無償であっても税理士法違反（独占業務の侵害）になる。',
+    trap: '「無償ならOK」「一般論の説明もNG」の2パターンでひっかけてくる超頻出問題。一般的な税制の解説はOK、個別具体的な税務相談・書類作成は有償無償を問わずNG。'
+  },
+  {
+    id: 'L02', f: 'life', t: 'mc', badge: '数字暗記',
+    q: '「100万円を年利2%で5年間複利運用したらいくら？」を計算するときに使う係数はどれ？',
+    c: ['終価係数', '現価係数', '年金終価係数'],
+    point: '今の元本 → 将来の金額 ＝ 終価係数。',
+    trap: '「積立（毎年）」なら年金終価係数、「一括（今の元本）」なら終価係数。「取り崩し」は資本回収係数。この区別だけで6係数問題は勝てる。'
+  },
+  {
+    id: 'L03', f: 'life', t: 'mc', badge: '頻出★3',
+    q: '全国健康保険協会管掌健康保険（協会けんぽ）の「傷病手当金」は、連続して何日休んだ後の何日目から支給される？',
+    c: ['連続3日休んだ後の4日目から', '連続2日休んだ後の3日目から', '休んだ初日から'],
+    point: '待期期間は「連続3日間」→ 4日目から支給。',
+    trap: '休業補償（労災）も待期3日だが「通算3日」でOK。健康保険の傷病手当金は「連続3日（土日祝もカウント可）」が必要。'
+  },
+  {
+    id: 'L04', f: 'life', t: 'ox', badge: 'ひっかけ注意',
+    q: '雇用保険の基本手当（失業給付）を受給しながら、老齢厚生年金を同時に満額受給することができる。',
+    a: false,
+    point: '65歳未満の特別支給の老齢厚生年金とは原則「調整（年金停止）」される。',
+    trap: '失業給付と65歳未満の老齢厚生年金は併給不可（ハローワークで求職申込すると年金が止まる）。65歳以降の老齢厚生年金とは併給できる場合がある。'
+  },
+  {
+    id: 'L05', f: 'life', t: 'mc', badge: '頻出★3',
+    q: '国民年金の第1号被保険者が、保険料を「2年前納」するなどの割引制度を利用する場合以外に、産前産後期間の保険料はどうなる？',
+    c: ['届出により全額免除（将来は納付済み扱い）', '半額免除（将来の年金額も半額）', '免除制度はない'],
+    point: '産前産後期間の国民年金保険料は「免除」でも年金額は満額反映。',
+    trap: '通常の全額免除は国庫負担分（1/2）しか年金に反映されないが、産前産後免除は「保険料を納付したもの」として100%反映される神制度。'
+  },
+  {
+    id: 'L06', f: 'life', t: 'mc', badge: '数字暗記',
+    q: '年金の「繰下げ受給」で、1カ月遅らせるごとの増額率はいくら？',
+    c: ['0.7%（最大84%増）', '0.4%（最大48%増）', '0.5%（最大60%増）'],
+    point: '繰下げ＝＋0.7%/月（最大75歳で＋84%）。繰上げ＝−0.4%/月。',
+    trap: '2022年改正で繰上げ減額率は0.5%→0.4%に、繰下げ上限は70歳→75歳に拡大。古い数字「0.5%」を選択肢に混ぜてくるので注意！'
+  },
+  {
+    id: 'L07', f: 'life', t: 'ox', badge: 'ひっかけ注意',
+    q: 'iDeCo（個人型確定拠出年金）の掛金は、その全額が「小規模企業共済等掛金控除」として所得控除の対象になる。',
+    a: true,
+    point: 'iDeCoは「掛金全額が所得控除」「運用益非課税」「受取時も控除あり」のトリプル優遇。',
+    trap: '「生命保険料控除」と混ぜてひっかけてくる問題が多い。iDeCoは「小規模企業共済等掛金控除」で全額控除！'
+  },
+  {
+    id: 'L08', f: 'life', t: 'mc', badge: '頻出★3',
+    q: '住宅ローンの返済方法のうち、毎回の返済額（元金＋利息）が一定で、当初は利息の割合が多いのは？',
+    c: ['元利均等返済', '元金均等返済', 'バルーン返済'],
+    point: '元利均等＝返済額が一定。元金均等＝元金が一定で総返済額が少ない。',
+    trap: '総返済額が少ないのは「元金均等返済」、家計管理しやすいのは「元利均等返済」。漢字の「利（利息込みで均等）」か「金（元金が均等）」かで判別しよう。'
+  },
+  {
+    id: 'L09', f: 'life', t: 'ox', badge: '数字暗記',
+    q: '公的介護保険の第2号被保険者は、40歳以上65歳未満の医療保険加入者であり、要介護認定を受ければ原因を問わずサービスを利用できる。',
+    a: false,
+    point: '第2号被保険者（40〜64歳）は「特定疾病（16疾病）」が原因の場合のみ対象。',
+    trap: '第1号（65歳以上）は原因を問わないが、第2号は老化に起因する特定疾病（末期がん、関節リウマチ等）限定。交通事故などでは使えない！'
+  },
+  {
+    id: 'L10', f: 'life', t: 'mc', badge: '頻出★2',
+    q: '遺族基礎年金を受給できる遺族の範囲として正しいものはどれ？',
+    c: ['子のある配偶者、または子', '配偶者のみ（子がなくても可）', '父母や孫も含まれる'],
+    point: '遺族基礎年金は「子」がいないと絶対にもらえない。',
+    trap: '子のない妻がもらえる可能性があるのは「遺族厚生年金」や「寡婦年金」。遺族基礎年金は「18歳到達年度末までの子（障害1・2級は20歳未満）」が必須条件。'
+  },
+
+  // ===== 2. リスク管理（保険） =====
+  {
+    id: 'R01', f: 'risk', t: 'ox', badge: '頻出★3',
+    q: 'クーリング・オフ制度により生命保険の申込みを撤回できるのは、原則として「申込日」または「クーリング・オフに関する書面を受け取った日」のいずれか遅い日から8日以内である。',
+    a: true,
+    point: '「いずれか遅い日」から起算して8日以内（書面または電磁的記録）。',
+    trap: '「早い日から8日」や「14日以内」にすり替えるのが定番の罠。保険期間1年以下の契約や、医師の診査を受けた後は原則クーリング・オフ不可。'
+  },
+  {
+    id: 'R02', f: 'risk', t: 'mc', badge: 'ひっかけ注意',
+    q: '契約者（保険料負担者）＝夫、被保険者＝妻、死亡保険金受取人＝夫 の場合、妻が死亡して夫が受け取る保険金にかかる税金は？',
+    c: ['所得税（一時所得）', '相続税', '贈与税'],
+    point: '「契約者＝受取人」なら所得税（一時所得）。',
+    trap: '3パターン丸暗記：①契約者＝被保険者→相続税、②契約者＝受取人→所得税（一時所得）、③全員バラバラ→贈与税。自分で払って自分が受け取るなら所得税！'
+  },
+  {
+    id: 'R03', f: 'risk', t: 'ox', badge: '数字暗記',
+    q: '生命保険会社が破綻した場合、生命保険契約者保護機構により、破綻時点の責任準備金等の原則90%まで補償される（高予定利率契約を除く）。',
+    a: true,
+    point: '生保は責任準備金の90%補償。損保（自動車・火災）は原則80%（自賠責・地震は100%）。',
+    trap: '生保90%・損保80%の数字の入れ替えが超頻出。さらに損保の「自賠責・地震保険」は100%補償される点もセットで押さえよう。'
+  },
+  {
+    id: 'R04', f: 'risk', t: 'mc', badge: '頻出★3',
+    q: '2012年1月1日以降に締結した生命保険契約の「生命保険料控除」で、一般・介護医療・個人年金の3区分合計の所得税の控除上限額はいくら？',
+    c: ['12万円（各4万円）', '10万円（各5万円）', '15万円（各5万円）'],
+    point: '新制度の所得税上限は「4万×3＝12万円」（住民税は2.8万×3＝最大7万円）。',
+    trap: '旧制度（〜2011年）は「一般＋個人年金」の2区分で合計10万円。住民税の上限は2.8万×3＝8.4万ではなく「7万円」でキャップがかかる点も超重要！'
+  },
+  {
+    id: 'R05', f: 'risk', t: 'ox', badge: 'ひっかけ注意',
+    q: '地震保険の保険金額は、主契約である火災保険の保険金額の30%〜50%の範囲内で設定し、上限は建物5,000万円・家財1,000万円である。',
+    a: true,
+    point: '火災保険の30〜50%、上限は建物5,000万・家財1,000万。',
+    trap: '地震保険は単独では契約できず、必ず火災保険とセット。また「津波・噴火」による損害も地震保険の対象になる（火災保険では出ない）。'
+  },
+  {
+    id: 'R06', f: 'risk', t: 'mc', badge: '頻出★2',
+    q: '自動車保険の「対人賠償保険」で、自賠責保険の補償対象となる同乗していた家族（配偶者・子）がケガをした場合、対人賠償保険から保険金は支払われる？',
+    c: ['支払われない（人身傷害保険等の対象）', '自賠責を超えた分が支払われる', '半額のみ支払われる'],
+    point: '対人賠償は「他人」への賠償。記名被保険者の父母・配偶者・子は免責。',
+    trap: '自賠責保険なら家族でも「他人性」が認められれば出る場合があるが、任意の対人賠償保険は父母・配偶者・子への賠償は対象外。'
+  },
+  {
+    id: 'R07', f: 'risk', t: 'ox', badge: '頻出★2',
+    q: '医療保険などに付加される「リビング・ニーズ特約」では、余命6カ月以内と判断された場合、特約保険料を支払っていなくても死亡保険金の一部または全部を生存中に受け取れる。',
+    a: true,
+    point: 'リビング・ニーズ特約は「特約保険料が無料」で、受取時は「非課税」。',
+    trap: '「特約保険料が必要」「所得税がかかる」の2つが定番の誤り選択肢。余命6カ月以内・特約料無料・非課税！'
+  },
+  {
+    id: 'R08', f: 'risk', t: 'mc', badge: 'ひっかけ注意',
+    q: '個人年金保険料税制適格特約を付加するための条件として「誤っている」ものはどれ？',
+    c: ['年金受取開始年齢が55歳以上であること', '保険料の払込期間が10年以上であること', '年金受取人が契約者またはその配偶者であること'],
+    point: '年金受取開始は「60歳以上」、受取期間は「10年以上」が必要。',
+    trap: '10年以上（払込期間・受取期間）、60歳以上（受取開始）、契約者または配偶者が受取人、被保険者＝受取人、が条件。55歳ではNG！'
+  },
+  {
+    id: 'R09', f: 'risk', t: 'ox', badge: '数字暗記',
+    q: '時価2,000万円の建物に保険金額1,000万円の火災保険（比例填補方式）をかけている場合、半焼（損害額1,000万円）したときに受け取れる保険金は1,000万円全額である。',
+    a: false,
+    point: '一部保険（付保割合80%未満）で比例填補の場合、損害額の全額は出ない。',
+    trap: '半焼（損害1,000万）でも、付保割合が低いため「1,000万 × (1,000万 ÷ (2,000万×80%)) ＝ 625万円」のように減額される！'
+  },
+  {
+    id: 'R10', f: 'risk', t: 'mc', badge: '頻出★3',
+    q: '契約者が法人、被保険者が役員・従業員、死亡保険金受取人が法人の「定期保険」で、保険期間満了時に受け取る満期保険金はある？',
+    c: ['ない（掛け捨て）', '支払保険料の半額が戻る', '必ず解約返戻金と同額が戻る'],
+    point: '定期保険は「満期保険金なし」。養老保険は「死亡＝満期同額」。',
+    trap: '「定期保険」「終身保険」には満期保険金がない。満期保険金があるのは「養老保険」や「個人年金保険」など。'
+  },
+
+  // ===== 3. 金融資産運用 =====
+  {
+    id: 'F01', f: 'fin', t: 'mc', badge: '頻出★3',
+    q: '景気が良くなると一般的に、市中の金利と債券価格はそれぞれどう動く？',
+    c: ['金利は上昇、債券価格は下落', '金利は上昇、債券価格も上昇', '金利は下落、債券価格は上昇'],
+    point: '金利と債券価格は「シーソー（逆相関）」。',
+    trap: '新規発行の債券の利率が高くなるため、既存の低い利率の債券は人気が落ちて価格が下がる。好景気→インフレ懸念→金利上昇→債券価格下落。'
+  },
+  {
+    id: 'F02', f: 'fin', t: 'ox', badge: '数字暗記',
+    q: '投資信託のコストのうち、保有期間中に信託財産から日々差し引かれる費用を「信託財産留保額」という。',
+    a: false,
+    point: '保有中に日々引かれるのは「運用管理費用（信託報酬）」。',
+    trap: '購入時＝購入時手数料、保有中＝信託報酬（運用管理費用）、解約時＝信託財産留保額。3つのタイミングを混同させる問題が鉄板。'
+  },
+  {
+    id: 'F03', f: 'fin', t: 'mc', badge: '頻出★3',
+    q: '新NISA（2024年〜）の「つみたて投資枠」と「成長投資枠」の年間投資上限額の合計はいくら？',
+    c: ['360万円（つみたて120万＋成長240万）', '240万円（つみたて120万＋成長120万）', '180万円（つみたて60万＋成長120万）'],
+    point: '年間360万円（120万＋240万）、生涯非課税保有限度額は1,800万円。',
+    trap: '成長投資枠単独の生涯上限は1,200万円、非課税保有期間は無期限、売却すれば翌年に枠が復活する点もセットで暗記！'
+  },
+  {
+    id: 'F04', f: 'fin', t: 'mc', badge: '計算必須',
+    q: '株価2,000円、1株あたり純利益（EPS）が100円の企業のPER（株価収益率）は何倍？',
+    c: ['20倍', '10倍', '5倍'],
+    point: 'PER ＝ 株価 ÷ 1株あたり純利益（EPS）。2,000 ÷ 100 ＝ 20倍。',
+    trap: 'PBR（純資産倍率）は「株価 ÷ 1株あたり純資産（BPS）」、配当利回りは「1株配当 ÷ 株価 × 100」。PERもPBRも低いほうが「割安」！'
+  },
+  {
+    id: 'F05', f: 'fin', t: 'ox', badge: 'ひっかけ注意',
+    q: '預金保険制度により保護される「決済用預金（無利息・要求払い・決済サービス）」は、1金融機関あたり預金者1人につき元本1,000万円とその利息までが保護対象である。',
+    a: false,
+    point: '決済用預金は「全額保護」（1,000万円の上限なし）。',
+    trap: '普通預金・定期預金が「元本1,000万円＋破綻日までの利息」。外貨預金は保護対象外！'
+  },
+  {
+    id: 'F06', f: 'fin', t: 'mc', badge: '頻出★2',
+    q: '異なる2つの資産を組み合わせて運用するとき、分散投資のリスク低減効果が「最も大きい」相関係数はどれ？',
+    c: ['-1.0', '0', '+1.0'],
+    point: '相関係数は「-1.0に近いほど」逆の動きをするためリスク低減効果が高い。',
+    trap: '+1.0は全く同じ動きをするため分散効果ゼロ。0は無相関で一定の分散効果あり。-1.0が最強の分散。'
+  },
+  {
+    id: 'F07', f: 'fin', t: 'ox', badge: '頻出★3',
+    q: '株式を配当権利確定日に保有して配当金を受け取るためには、権利確定日（決算日）の「2営業日前（権利付き最終日）」の取引終了時点で株主になっている必要がある。',
+    a: true,
+    point: '権利付き最終日は「権利確定日の2営業日前」。',
+    trap: '受渡日が「約定日から起算して3営業日目（T+2）」になったため、権利確定日の2営業日前までに買えばOK（前日＝権利落ち日では遅い）。'
+  },
+  {
+    id: 'F08', f: 'fin', t: 'mc', badge: '計算必須',
+    q: '1米ドル＝140円のときに1万米ドルを購入し、1米ドル＝150円のときに円に換えた場合、為替差益（手数料・税金除く）はいくら？',
+    c: ['10万円の利益', '10万円の損失', '1万円の利益'],
+    point: '外貨建て資産は「円安（140→150）」になると円換算でプラス！',
+    trap: '「円高＝数字が小さくなる」「円安＝数字が大きくなる」で直感と逆に感じる人が多いので注意。140万で買って150万で売った＝＋10万。'
+  },
+  {
+    id: 'F09', f: 'fin', t: 'ox', badge: 'ひっかけ注意',
+    q: '個人向け国債（変動10年・固定5年・固定3年）は、発行から1年経過すれば、原則としていつでも中途換金が可能である。',
+    a: true,
+    point: '個人向け国債は「1年経過でいつでも換金OK」（直前2回分の利子相当額が差し引かれる）。',
+    trap: '最低金利は年0.05%保証、1万円から購入可能。'
+  },
+  {
+    id: 'F10', f: 'fin', t: 'mc', badge: '頻出★2',
+    q: 'ETF（上場投資信託）と通常の公募投資信託の決定的な違いとして正しいものは？',
+    c: ['ETFは取引時間中にリアルタイムの価格で売買できる', 'ETFはNISAの成長投資枠では購入できない', 'ETFは信託報酬が一切かからない'],
+    point: 'ETFは「上場している」ため株と同じようにリアルタイム売買・指値注文が可能。',
+    trap: '通常の投資信託は1日1回の「基準価額」でしか売買できない（ブラインド方式）。ETFも信託報酬はかかり、NISAでも購入可能。'
+  },
+
+  // ===== 4. タックスプランニング =====
+  {
+    id: 'T01', f: 'tax', t: 'mc', badge: '頻出★3',
+    q: '所得税の計算において、他の所得と損益通算（赤字を他の黒字から引くこと）が「できる」所得の組み合わせはどれ？',
+    c: ['不動産・事業・山林・譲渡（富士山上）', '不動産・事業・給与・雑', '利子・配当・一時・譲渡'],
+    point: '損益通算できるのは「不・事・山・譲（富士山上）」の4つだけ！',
+    trap: '雑所得（副業や仮想通貨など）や一時所得の赤字は他の所得と通算できない。また不動産所得の赤字のうち「土地取得のための借入金利子」は損益通算の対象外！'
+  },
+  {
+    id: 'T02', f: 'tax', t: 'ox', badge: '数字暗記',
+    q: '医療費控除の対象となる金額は、その年に支払った医療費の合計額から保険金などで補填される金額を引き、さらに原則10万円（総所得金額等が200万円未満の人はその5%）を差し引いた金額（上限200万円）である。',
+    a: true,
+    point: '（医療費 − 保険金等） − 10万円（または所得の5%）、上限200万円。',
+    trap: 'セルフメディケーション税制（1.2万円超・上限8.8万円）とは「選択適用」で併用不可。また人間ドック費用や通院のマイカーガソリン代は原則対象外。'
+  },
+  {
+    id: 'T03', f: 'tax', t: 'mc', badge: 'ひっかけ注意',
+    q: '退職所得の計算式（特定役員退職手当等を除く）で正しいものはどれ？',
+    c: ['（退職収入 − 退職所得控除額）× 1/2', '退職収入 − 退職所得控除額', '（退職収入 − 50万円）× 1/2'],
+    point: '最後に「× 1/2」するのが退職所得の超優遇ポイント。',
+    trap: '退職所得控除額は勤続20年以下「40万×年数（最低80万）」、20年超「800万＋70万×(年数−20)」。1年未満の端数は「切り上げ」！'
+  },
+  {
+    id: 'T04', f: 'tax', t: 'ox', badge: '頻出★3',
+    q: '住宅ローン控除（住宅借入金等特別控除）は、給与所得者の場合、1年目から年末調整で適用を受けることができる。',
+    a: false,
+    point: '「1年目」は必ず確定申告が必要。2年目以降は年末調整でOK。',
+    trap: 'ふるさと納税のワンストップ特例（5自治体まで）と異なり、住宅ローン控除の初年度は会社員でも確定申告が必須！'
+  },
+  {
+    id: 'T05', f: 'tax', t: 'mc', badge: '数字暗記',
+    q: '青色申告特別控除で、最大「65万円」の控除を受けるための必須条件に含まれないものはどれ？',
+    c: ['配偶者が青色事業専従者であること', '複式簿記で記帳し貸借対照表・損益計算書を添付', 'e-Taxによる電子申告または電子帳簿保存'],
+    point: '65万円控除 ＝ 複式簿記 ＋ 期限内申告 ＋ e-Tax（または電子帳簿保存）。',
+    trap: 'e-Taxを使わず紙で提出すると「55万円控除」になる。簡易簿記は「10万円控除」。専従者の有無は関係ない！'
+  },
+  {
+    id: 'T06', f: 'tax', t: 'ox', badge: 'ひっかけ注意',
+    q: '一時所得の金額は、「総収入金額 − 収入を得るために支出した金額 − 特別控除額（最高50万円）」で計算し、総所得金額に算入するときはその1/2の金額となる。',
+    a: true,
+    point: '一時所得は「50万円引いて、さらに1/2」して総合課税に合算。',
+    trap: '生命保険の満期保険金や懸賞金などが一時所得。「1/2する前」の金額か「1/2した後」の金額かを問う計算問題が頻出。'
+  },
+  {
+    id: 'T07', f: 'tax', t: 'mc', badge: '頻出★2',
+    q: '確定申告書を提出する義務がある人のうち、給与所得者（会社員）が確定申告をしなければならない基準は、給与の年間収入金額がいくらを超える場合？',
+    c: ['2,000万円超', '1,000万円超', '1,500万円超'],
+    point: '給与収入「2,000万円超」または「給与以外の所得合計20万円超」で確定申告が必要。',
+    trap: '「所得2,000万円」ではなく「収入2,000万円」。副業は「収入20万円」ではなく「所得（収入−経費）20万円」超！'
+  },
+  {
+    id: 'T08', f: 'tax', t: 'ox', badge: '頻出★2',
+    q: '配偶者控除の適用を受けるためには、生計を一にする配偶者の合計所得金額が48万円以下（給与収入のみなら103万円以下）であるほか、納税者本人の合計所得金額が1,000万円以下でなければならない。',
+    a: true,
+    point: '本人所得1,000万円超は配偶者控除も配偶者特別控除もゼロ。',
+    trap: '「納税者本人の所得制限（1,000万円以下）」を忘れて「本人の所得にかかわらず受けられる」とするひっかけが多い。'
+  },
+  {
+    id: 'T09', f: 'tax', t: 'mc', badge: '数字暗記',
+    q: '所得税の確定申告の原則的な提出期間として正しいものは？',
+    c: ['翌年2月16日〜3月15日', '翌年1月1日〜2月15日', '翌年3月1日〜3月31日'],
+    point: '所得税は「2/16〜3/15」（土日祝なら翌平日）。消費税（個人）は「3/31」まで。',
+    trap: '還付申告（払いすぎた税金を取り戻す申告）は、翌年1月1日から「5年間」いつでも提出できる！'
+  },
+  {
+    id: 'T10', f: 'tax', t: 'ox', badge: 'ひっかけ注意',
+    q: 'ふるさと納税（寄附金控除）において、確定申告が不要な「ワンストップ特例制度」を利用できるのは、1年間の寄附先が6自治体以内の場合である。',
+    a: false,
+    point: 'ワンストップ特例は「5自治体以内」。',
+    trap: '同じ自治体に2回寄附しても「1自治体」とカウントする。6自治体以上に寄附したら確定申告が必要！'
+  },
+
+  // ===== 5. 不動産 =====
+  {
+    id: 'E01', f: 're', t: 'mc', badge: '頻出★3',
+    q: '不動産の登記記録において、「抵当権」に関する事項が記載されるのはどこ？',
+    c: ['権利部（乙区）', '権利部（甲区）', '表題部'],
+    point: '所有権＝甲区、所有権以外（抵当権・賃借権）＝乙区、物理的情報＝表題部。',
+    trap: '「乙区に所有権移転登記」というひっかけが定番。甲＝所有権、乙＝抵当権、と覚えよう。'
+  },
+  {
+    id: 'E02', f: 're', t: 'ox', badge: 'ひっかけ注意',
+    q: '登記には「公信力」があるため、登記簿上の所有者を信じて取引をすれば、たとえ真の所有者でなくても原則として所有権を取得できる。',
+    a: false,
+    point: '日本の不動産登記には「公信力がない」（対抗力はある）。',
+    trap: '「対抗力（第三者に主張できる力）はある」が「公信力（登記を信じたら保護される力）はない」。この2語の区別は超重要！'
+  },
+  {
+    id: 'E03', f: 're', t: 'mc', badge: '数字暗記',
+    q: '宅地建物取引業法において、宅建業者が売主・買主双方の媒介（仲介）をする場合、片方から受け取れる報酬（仲介手数料）の上限（400万円超の物件・税抜）は？',
+    c: ['売買価格 × 3% ＋ 6万円', '売買価格 × 4% ＋ 2万円', '売買価格 × 5%'],
+    point: '400万超は「3%＋6万円」（＋消費税）。',
+    trap: '200万以下＝5%、200万超400万以下＝4%＋2万、400万超＝3%＋6万。さらに「消費税」を足せる点も忘れずに！'
+  },
+  {
+    id: 'E04', f: 're', t: 'mc', badge: '計算必須',
+    q: '敷地面積200㎡、指定建蔽率60%、指定容積率200%の土地に建てられる建物の「延べ面積」の最大値は？（前面道路幅員による制限なし）',
+    c: ['400㎡', '120㎡', '240㎡'],
+    point: '延べ面積の上限＝敷地面積 × 容積率（200 × 200% ＝ 400㎡）。',
+    trap: '「建築面積」の上限は建蔽率（200×60%＝120㎡）、「延べ面積」の上限は容積率。どちらを聞かれているか要確認！'
+  },
+  {
+    id: 'E05', f: 're', t: 'ox', badge: '数字暗記',
+    q: '建築基準法上の道路に接していない土地でも、敷地の周囲が広ければ原則として建物を建てることができる。',
+    a: false,
+    point: '接道義務：幅員4m以上の道路に「2m以上」接していなければ建築不可。',
+    trap: 'セットバック（道路中心線から2m後退）した部分は、建蔽率・容積率の敷地面積から除外される点もよく出る！'
+  },
+  {
+    id: 'E06', f: 're', t: 'mc', badge: '頻出★3',
+    q: '居住用財産（マイホーム）を譲渡した場合の「3,000万円特別控除」について、誤っているものはどれ？',
+    c: ['所有期間が5年超でなければ適用できない', '配偶者や直系血族への売却は対象外', '住まなくなった日から3年目の年末までの売却ならOK'],
+    point: '3,000万円特別控除は「所有期間の長短を問わない」。',
+    trap: '「軽減税率の特例（10年超）」と混同させる定番の罠。3,000万控除は1日でも住んでいれば所有期間に関係なく使える！'
+  },
+  {
+    id: 'E07', f: 're', t: 'ox', badge: '頻出★2',
+    q: '定期借家契約（定期建物賃貸借契約）を締結する場合、公正証書などの書面（または電磁的方法）による契約が必須であり、契約書とは別に事前説明（書面交付）も必要である。',
+    a: true,
+    point: '定期借家契約は「書面必須＋事前の書面説明必須＋更新なし」。',
+    trap: '定期借地権（一般50年以上）も書面必須だが、事業用定期借地権（10年以上50年未満）だけは「公正証書」が必須！'
+  },
+  {
+    id: 'E08', f: 're', t: 'mc', badge: '数字暗記',
+    q: '区分所有法において、マンションの「建替え決議」を成立させるために必要な賛成割合は、区分所有者および議決権のそれぞれ何分のいくつ以上？',
+    c: ['5分の4以上', '4分の3以上', '過半数'],
+    point: '建替え＝5分の4、規約の変更・大規模修繕＝4分の3、普通決議＝過半数。',
+    trap: '「4分の3」と「5分の4」の数字入れ替えが鉄板。一番重い「建替え」が「5分の4」！'
+  },
+  {
+    id: 'E09', f: 're', t: 'ox', badge: 'ひっかけ注意',
+    q: '固定資産税の課税標準の特例（小規模住宅用地：200㎡以下の部分）により、住宅用地の固定資産税評価額は課税標準が1/6に軽減される。',
+    a: true,
+    point: '小規模住宅用地（200㎡以下）は固定資産税が「1/6」（都市計画税は「1/3」）。',
+    trap: '200㎡を超える一般住宅用地は固定資産税「1/3」（都市計画税「2/3」）。都市計画税と混同しないように！'
+  },
+  {
+    id: 'E10', f: 're', t: 'mc', badge: '頻出★2',
+    q: '不動産の価格を求める鑑定評価手法のうち、「近隣の類似不動産の取引事例」をもとに価格を求める手法は？',
+    c: ['取引事例比較法', '原価法', '収益還元法'],
+    point: '事例を比較＝取引事例比較法、再調達原価＝原価法、将来の収益＝収益還元法。',
+    trap: '一戸建ての建物＝原価法、マンションや土地＝取引事例比較法、投資用賃貸＝収益還元法が向いている。'
+  },
+
+  // ===== 6. 相続・事業承継 =====
+  {
+    id: 'I01', f: 'inh', t: 'mc', badge: '頻出★3',
+    q: '遺産総額から差し引くことができる相続税の「基礎控除額」の計算式は？',
+    c: ['3,000万円 ＋ 600万円 × 法定相続人の数', '5,000万円 ＋ 1,000万円 × 法定相続人の数', '3,600万円 ＋ 600万円 × 法定相続人の数'],
+    point: '基礎控除 ＝ 3,000万円 ＋ 600万円 × 法定相続人の数。',
+    trap: '相続放棄した人がいても「放棄がなかったものとして」法定相続人の数にカウントする点と、養子の数制限（実子あり1人・なし2人まで）が頻出！'
+  },
+  {
+    id: 'I02', f: 'inh', t: 'ox', badge: '数字暗記',
+    q: '相続の放棄をしたい場合、自己のために相続の開始があったことを知った時から原則として「3カ月以内」に家庭裁判所に申述しなければならない。',
+    a: true,
+    point: '相続放棄・限定承認は「3カ月以内」に家庭裁判所へ。',
+    trap: 'タイムライン暗記：3カ月＝放棄・限定承認、4カ月＝準確定申告、10カ月＝相続税の申告・納付！'
+  },
+  {
+    id: 'I03', f: 'inh', t: 'mc', badge: '計算必須',
+    q: '被相続人が死亡し、相続人が「配偶者」と「被相続人の父母（2人）」である場合、配偶者の法定相続分はいくら？',
+    c: ['3分の2', '2分の1', '4分の3'],
+    point: '配偶者の取り分：子となら1/2、親（直系尊属）となら2/3、兄弟姉妹となら3/4。',
+    trap: '「親がいる場合は2/3」「兄弟姉妹なら3/4」。また兄弟姉妹には「遺留分」がない点もセットで暗記！'
+  },
+  {
+    id: 'I04', f: 'inh', t: 'ox', badge: 'ひっかけ注意',
+    q: '自筆証書遺言は、遺言者が全文・日付・氏名を自書し押印すれば成立するが、財産目録だけはパソコンで作成したり通帳のコピーを添付したりすることができる（各ページに署名押印が必要）。',
+    a: true,
+    point: '本文は自書必須だが「財産目録」はPC作成やコピー添付OK（全ページに署名押印）。',
+    trap: '法務局の「自筆証書遺言書保管制度」を利用すれば、家庭裁判所の「検認」が不要になる点も超頻出！'
+  },
+  {
+    id: 'I05', f: 'inh', t: 'mc', badge: '頻出★3',
+    q: '暦年課税による贈与税の基礎控除額は、贈与を受ける人（受贈者）1人あたり年間いくら？',
+    c: ['110万円', '100万円', '60万円'],
+    point: '暦年贈与の基礎控除は「年間110万円」（あげる人ではなく、もらう人1人あたり）。',
+    trap: '父から100万、母から100万もらったら合計200万なので「200万 − 110万 ＝ 90万」に課税される！'
+  },
+  {
+    id: 'I06', f: 'inh', t: 'ox', badge: '数字暗記',
+    q: '相続時精算課税制度を選択した場合、2024年以降の贈与からは、特別控除2,500万円とは別枠で毎年「110万円の基礎控除」が設けられ、年110万円以下の贈与は申告不要かつ相続財産に加算されない。',
+    a: true,
+    point: '2024年改正で相続時精算課税にも「年110万円の基礎控除」が新設！',
+    trap: '一度選択すると暦年課税に戻れない点は変わらないが、年110万以下なら相続時加算も不要になり超使いやすくなった。'
+  },
+  {
+    id: 'I07', f: 'inh', t: 'mc', badge: '頻出★3',
+    q: '「小規模宅地等の特例」において、被相続人が住んでいた宅地（特定居住用宅地等）を配偶者が相続する場合、減額割合と限度面積は？',
+    c: ['330㎡まで80%減額', '200㎡まで50%減額', '400㎡まで80%減額'],
+    point: '居住用＝330㎡まで80%減額、事業用＝400㎡まで80%減額、貸付事業用＝200㎡まで50%減額。',
+    trap: '330・400・200の面積と80%・50%の割合の組み合わせを正確に！'
+  },
+  {
+    id: 'I08', f: 'inh', t: 'ox', badge: '頻出★2',
+    q: '相続税の「配偶者の税額軽減」により、配偶者が相続した遺産額が「1億6,000万円」まで、または「配偶者の法定相続分相当額」までであれば、配偶者に相続税はかからない。',
+    a: true,
+    point: '1億6,000万円または法定相続分まで相続税ゼロ。',
+    trap: 'ただし税額がゼロになる場合でも「相続税の申告書を提出すること」が適用条件になる！'
+  },
+  {
+    id: 'I09', f: 'inh', t: 'mc', badge: 'ひっかけ注意',
+    q: '「死亡保険金の非課税枠（500万円×法定相続人の数）」と「死亡退職金の非課税枠（500万円×法定相続人の数）」について正しいのは？',
+    c: ['相続放棄した人は非課税枠を受け取れないが、法定相続人の数には含める', '相続放棄した人でも非課税枠を使える', '両方を合算して500万円×法定相続人の数まで非課税'],
+    point: '保険と退職金は「別枠」でそれぞれ500万×人数。放棄した人は枠を使えないが頭数には入れる。',
+    trap: '相続放棄した人が死亡保険金を受け取った場合、みなし相続財産として課税される上に500万控除は使えない！'
+  },
+  {
+    id: 'I10', f: 'inh', t: 'ox', badge: '頻出★2',
+    q: '遺留分を侵害された相続人が、遺留分侵害額請求権を行使できるのは、相続開始および遺留分侵害の事実を知った時から1年間（または相続開始から10年間）である。',
+    a: true,
+    point: '知った時から1年、または相続開始から10年で時効。請求は「金銭」で行う。',
+    trap: '法改正により現物返還ではなく「金銭債権（遺留分侵害額請求）」になっている点も確認しておこう。'
+  }
+];
+
+window.FP3_MEMOS = [
+  { id: 'M01', f: 'inh', title: '相続手続きのタイムライン', highlight: '3カ月 → 4カ月 → 10カ月', body: '3カ月：相続放棄・限定承認（家裁）\n4カ月：準確定申告（所得税）\n10カ月：相続税の申告・納付' },
+  { id: 'M02', f: 'tax', title: '損益通算できる4つの所得', highlight: '不・事・山・譲（富士山上）', body: '不動産・事業・山林・譲渡の赤字だけ他と相殺OK。\n※雑所得・一時所得の赤字や、土地借入金利子はNG！' },
+  { id: 'M03', f: 'risk', title: '保険金の税金3パターン', highlight: '契＝被：相続 / 契＝受：所得 / 別々：贈与', body: '誰が払い、誰が死に、誰が受け取るかで決まる。\n自分で払って自分で受け取るなら「一時所得（所得税）」。' },
+  { id: 'M04', f: 'fin', title: '新NISAの数字を10秒で暗記', highlight: '年360万 / 生涯1,800万', body: 'つみたて120万＋成長240万＝年360万。\n非課税期間は無期限、成長枠の生涯上限は1,200万。' },
+  { id: 'M05', f: 're', title: '区分所有法の決議要件', highlight: '普通：過半数 / 規約：3/4 / 建替：4/5', body: '一番重い「建替え」だけ「5分の4以上」。\n規約設定変更・大規模修繕（共用部分の重大変更）は「4分の3」。' },
+  { id: 'M06', f: 'life', title: '年金の繰上げ・繰下げ率', highlight: '繰上げ -0.4%/月 ・ 繰下げ +0.7%/月', body: '60歳まで繰上げ＝最大-24%。\n75歳まで繰下げ＝最大+84%！' }
+];
+</script>
+  <script>window.FP3_DIAGRAMS = [
+  {
+    id: 'D_SEESAW',
+    f: 'fin',
+    title: '金利と債券価格のシーソー',
+    sub: 'なぜ好景気で金利が上がると、債券価格は下がるのか？',
+    qIds: ['F01'],
+    svg: `
+      <svg viewBox="0 0 360 190" class="diag-svg diag-seesaw" aria-label="金利と債券価格のシーソー図解">
+        <defs>
+          <linearGradient id="gBeam" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#1d9bf0"/>
+            <stop offset="100%" stop-color="#f91880"/>
+          </linearGradient>
+        </defs>
+        <!-- 支点 -->
+        <polygon points="180,120 158,162 202,162" fill="#2f3336" stroke="#71767b" stroke-width="2"/>
+        <line x1="60" y1="162" x2="300" y2="162" stroke="#2f3336" stroke-width="2"/>
+        <!-- 動くシーソー -->
+        <g class="seesaw-arm">
+          <rect x="45" y="114" width="270" height="10" rx="5" fill="url(#gBeam)"/>
+          <g transform="translate(75, 62)">
+            <rect x="-38" y="0" width="76" height="44" rx="10" fill="#0d2238" stroke="#1d9bf0" stroke-width="2"/>
+            <text x="0" y="19" text-anchor="middle" fill="#1d9bf0" font-size="11" font-weight="800">市中金利</text>
+            <text x="0" y="36" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">UP ↑</text>
+          </g>
+          <g transform="translate(285, 62)">
+            <rect x="-38" y="0" width="76" height="44" rx="10" fill="#2b0f1f" stroke="#f91880" stroke-width="2"/>
+            <text x="0" y="19" text-anchor="middle" fill="#f91880" font-size="11" font-weight="800">債券価格</text>
+            <text x="0" y="36" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">DOWN ↓</text>
+          </g>
+        </g>
+        <text x="180" y="182" text-anchor="middle" fill="#8b98b8" font-size="11" font-weight="700">金利と債券価格は常に逆向き（逆相関）</text>
+      </svg>
+    `
+  },
+  {
+    id: 'D_INS_TAX',
+    f: 'risk',
+    title: '死亡保険金の税金 3パターン',
+    sub: '誰が払い・誰が被保険者で・誰が受け取るか（3秒で判別）',
+    qIds: ['R02'],
+    svg: `
+      <svg viewBox="0 0 360 200" class="diag-svg diag-instax" aria-label="死亡保険金の税金3パターン図解">
+        <!-- パターン1 -->
+        <g class="tax-row row-1">
+          <rect x="12" y="14" width="336" height="50" rx="12" fill="#16181c" stroke="#2f3336"/>
+          <text x="26" y="36" fill="#e7e9ea" font-size="12" font-weight="800">① 契約者 ＝ 被保険者</text>
+          <text x="26" y="53" fill="#71767b" font-size="10">例：夫が払い、夫が死亡、妻が受取</text>
+          <rect x="235" y="24" width="100" height="30" rx="8" fill="rgba(0,186,124,0.2)" stroke="#00ba7c"/>
+          <text x="285" y="44" text-anchor="middle" fill="#00ba7c" font-size="13" font-weight="900">相続税</text>
+        </g>
+        <!-- パターン2 -->
+        <g class="tax-row row-2">
+          <rect x="12" y="74" width="336" height="50" rx="12" fill="#16181c" stroke="#2f3336"/>
+          <text x="26" y="96" fill="#e7e9ea" font-size="12" font-weight="800">② 契約者 ＝ 受取人</text>
+          <text x="26" y="113" fill="#71767b" font-size="10">例：夫が払い、妻が死亡、夫が受取</text>
+          <rect x="235" y="84" width="100" height="30" rx="8" fill="rgba(29,155,240,0.2)" stroke="#1d9bf0"/>
+          <text x="285" y="104" text-anchor="middle" fill="#1d9bf0" font-size="12" font-weight="900">所得税(一時)</text>
+        </g>
+        <!-- パターン3 -->
+        <g class="tax-row row-3">
+          <rect x="12" y="134" width="336" height="50" rx="12" fill="#16181c" stroke="#2f3336"/>
+          <text x="26" y="156" fill="#e7e9ea" font-size="12" font-weight="800">③ 全員バラバラ</text>
+          <text x="26" y="173" fill="#71767b" font-size="10">例：夫が払い、妻が死亡、子が受取</text>
+          <rect x="235" y="144" width="100" height="30" rx="8" fill="rgba(249,24,128,0.2)" stroke="#f91880"/>
+          <text x="285" y="164" text-anchor="middle" fill="#f91880" font-size="13" font-weight="900">贈与税</text>
+        </g>
+      </svg>
+    `
+  },
+  {
+    id: 'D_PENSION',
+    f: 'life',
+    title: '年金の繰上げ・繰下げレート',
+    sub: '65歳を基準に「-0.4%/月」vs「+0.7%/月」の伸び方',
+    qIds: ['L06'],
+    svg: `
+      <svg viewBox="0 0 360 190" class="diag-svg diag-pension" aria-label="年金の繰上げ繰下げ図解">
+        <line x1="30" y1="130" x2="330" y2="130" stroke="#2f3336" stroke-width="2"/>
+        <!-- 60歳 -->
+        <rect x="44" y="96" width="44" height="34" rx="6" fill="#f91880" class="bar-grow-1"/>
+        <text x="66" y="88" text-anchor="middle" fill="#f91880" font-size="12" font-weight="900">76%</text>
+        <text x="66" y="148" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">60歳</text>
+        <text x="66" y="164" text-anchor="middle" fill="#71767b" font-size="10">-0.4%/月</text>
+
+        <!-- 65歳 -->
+        <rect x="158" y="75" width="44" height="55" rx="6" fill="#1d9bf0" class="bar-grow-2"/>
+        <text x="180" y="67" text-anchor="middle" fill="#1d9bf0" font-size="12" font-weight="900">100%</text>
+        <text x="180" y="148" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">65歳(基準)</text>
+
+        <!-- 75歳 -->
+        <rect x="272" y="28" width="44" height="102" rx="6" fill="#00ba7c" class="bar-grow-3"/>
+        <text x="294" y="20" text-anchor="middle" fill="#00ba7c" font-size="13" font-weight="900">184%</text>
+        <text x="294" y="148" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">75歳</text>
+        <text x="294" y="164" text-anchor="middle" fill="#00ba7c" font-size="10">+0.7%/月</text>
+      </svg>
+    `
+  },
+  {
+    id: 'D_SONEKI',
+    f: 'tax',
+    title: '損益通算（富士山上）の相殺アニメ',
+    sub: '他の黒字と合算して節税できるのは4つの所得だけ',
+    qIds: ['T01'],
+    svg: `
+      <svg viewBox="0 0 360 190" class="diag-svg diag-soneki" aria-label="損益通算の図解">
+        <!-- 黒字の柱 -->
+        <rect x="34" y="34" width="84" height="110" rx="10" fill="#1d9bf0" opacity="0.85"/>
+        <text x="76" y="82" text-anchor="middle" fill="#fff" font-size="12" font-weight="800">給与など</text>
+        <text x="76" y="100" text-anchor="middle" fill="#fff" font-size="12" font-weight="900">黒字</text>
+
+        <!-- マイナス記号 -->
+        <text x="142" y="96" text-anchor="middle" fill="#ffd400" font-size="24" font-weight="900">−</text>
+
+        <!-- 赤字の柱（アニメーションで引き寄せられる） -->
+        <g class="soneki-slide">
+          <rect x="168" y="64" width="166" height="80" rx="12" fill="rgba(0,186,124,0.16)" stroke="#00ba7c" stroke-width="2"/>
+          <text x="251" y="90" text-anchor="middle" fill="#00ba7c" font-size="13" font-weight="900">不・事・山・譲</text>
+          <text x="251" y="109" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">（富士山上）の赤字</text>
+          <text x="251" y="129" text-anchor="middle" fill="#71767b" font-size="10">※雑所得・一時所得はNG</text>
+        </g>
+        <text x="180" y="172" text-anchor="middle" fill="#ffd400" font-size="11" font-weight="800">課税所得が圧縮されて節税になる！</text>
+      </svg>
+    `
+  },
+  {
+    id: 'D_BLDG',
+    f: 're',
+    title: '建蔽率 vs 容積率（立体イメージ）',
+    sub: '「1階の面積」か「全フロアの合計」かで使う率が違う',
+    qIds: ['E04'],
+    svg: `
+      <svg viewBox="0 0 360 190" class="diag-svg diag-bldg" aria-label="建蔽率と容積率の図解">
+        <!-- 敷地 -->
+        <rect x="40" y="138" width="120" height="22" rx="4" fill="#2f3336"/>
+        <text x="100" y="153" text-anchor="middle" fill="#e7e9ea" font-size="10" font-weight="700">敷地 200㎡</text>
+        <!-- 1階（建蔽率） -->
+        <rect x="56" y="104" width="72" height="32" rx="4" fill="#fb923c" class="bldg-floor-1"/>
+        <text x="92" y="124" text-anchor="middle" fill="#000" font-size="11" font-weight="900">建蔽率 60%</text>
+
+        <!-- 右側：容積率 -->
+        <rect x="200" y="138" width="120" height="22" rx="4" fill="#2f3336"/>
+        <text x="260" y="153" text-anchor="middle" fill="#e7e9ea" font-size="10" font-weight="700">敷地 200㎡</text>
+        <rect x="216" y="104" width="72" height="32" rx="4" fill="#1d9bf0"/>
+        <rect x="216" y="68" width="72" height="32" rx="4" fill="#38bdf8" class="bldg-floor-2"/>
+        <rect x="216" y="32" width="72" height="32" rx="4" fill="#7dd3fc" class="bldg-floor-3"/>
+        <text x="252" y="22" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="900">容積率 200% (合計400㎡)</text>
+      </svg>
+    `
+  },
+  {
+    id: 'D_INH_TIME',
+    f: 'inh',
+    title: '相続手続き 3・4・10カ月の壁',
+    sub: '死亡を知った日から走る3つの重要期限',
+    qIds: ['I02'],
+    svg: `
+      <svg viewBox="0 0 360 190" class="diag-svg diag-timeline" aria-label="相続手続き期限の図解">
+        <line x1="34" y1="88" x2="326" y2="88" stroke="#2f3336" stroke-width="4" stroke-linecap="round"/>
+        <line x1="34" y1="88" x2="326" y2="88" stroke="#a78bfa" stroke-width="4" stroke-linecap="round" class="tl-progress"/>
+
+        <circle cx="70" cy="88" r="10" fill="#f91880"/>
+        <text x="70" y="64" text-anchor="middle" fill="#f91880" font-size="13" font-weight="900">3カ月</text>
+        <text x="70" y="118" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">相続放棄</text>
+        <text x="70" y="133" text-anchor="middle" fill="#71767b" font-size="10">限定承認</text>
+
+        <circle cx="180" cy="88" r="10" fill="#1d9bf0"/>
+        <text x="180" y="64" text-anchor="middle" fill="#1d9bf0" font-size="13" font-weight="900">4カ月</text>
+        <text x="180" y="118" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">準確定申告</text>
+        <text x="180" y="133" text-anchor="middle" fill="#71767b" font-size="10">所得税</text>
+
+        <circle cx="292" cy="88" r="10" fill="#00ba7c"/>
+        <text x="292" y="64" text-anchor="middle" fill="#00ba7c" font-size="13" font-weight="900">10カ月</text>
+        <text x="292" y="118" text-anchor="middle" fill="#e7e9ea" font-size="11" font-weight="700">相続税</text>
+        <text x="292" y="133" text-anchor="middle" fill="#71767b" font-size="10">申告・納付</text>
+      </svg>
+    `
+  }
+];
+</script>
+  <script>window.FP3_LIVE_EPISODES = [
+  {
+    id: 'L06', f: 'life', diagId: 'D_PENSION',
+    speaker: '🦆 焦る会社員(59)',
+    chat: '「年金って65歳まで待つのダルいから60歳から繰上げ受給しよ！月0.1%くらいしか減らないでしょ？」',
+    optA: '月0.4%減る（最大24%減）',
+    optB: '月0.7%減る（最大42%減）',
+    correct: 'A',
+    kinetic: ['1ヶ月早めると', '【 -0.4% 減額 】', '逆に75歳まで待てば', '【 +84% 爆増！ 】'],
+    summary: '繰上げ＝月-0.4%（一生減額のまま）。繰下げ＝月+0.7%（最大75歳で+84%）。',
+    comments: ['一生減額はキツいｗ', '0.4と0.7は絶対出る', '75歳まで生きれば勝ち組']
+  },
+  {
+    id: 'R02', f: 'risk', diagId: 'D_INS_TAX',
+    speaker: '🦆 へそくり夫(45)',
+    chat: '「俺が保険料を払ってた妻の生命保険、受取人も俺にしてたから、受け取った保険金は相続税だよね？」',
+    optA: '所得税（一時所得）になる',
+    optB: '贈与税になる',
+    correct: 'A',
+    kinetic: ['自分で払って', '自分で受け取るなら', '【 所得税（一時所得） 】', '50万引いてさらに半分！'],
+    summary: '契約者＝受取人なら「所得税（一時所得）」。契約者＝被保険者なら「相続税」、3人バラバラなら「贈与税」！',
+    comments: ['これ毎回ひっかかる', '自分で払って自分＝所得税！', '一時所得だから1/2されてお得']
+  },
+  {
+    id: 'F01', f: 'fin', diagId: 'D_SEESAW',
+    speaker: '🦆 投資デビュー民',
+    chat: '「ニュースで『好景気で世の中の金利が上昇！』って言ってた！じゃあ俺が持ってる既発債券の価格も上がるよね！？」',
+    optA: '債券価格は下がる！',
+    optB: '債券価格も上がる！',
+    correct: 'A',
+    kinetic: ['金利が上がると…', '古い低金利の債券は', '【 人気急落で値下がり 】', '金利と債券はシーソー！'],
+    summary: '市場金利が上がると、それより利回りの低い既発債券は売られるため「債券価格は下落」する（逆相関）。',
+    comments: ['シーソーで覚えれば一発', '新しく出る高金利の方が欲しいもんね', '鉄板問題キタ']
+  },
+  {
+    id: 'T01', f: 'tax', diagId: 'D_SONEKI',
+    speaker: '🦆 副業チャレンジャー',
+    chat: '「今年、仮想通貨と副業（雑所得）で100万円の大赤字が出た…でも会社の給料（給与所得）から赤字を引いて節税できるよね？」',
+    optA: '雑所得は損益通算できない',
+    optB: '給料から赤字を引ける',
+    correct: 'A',
+    kinetic: ['赤字を他と相殺できるのは', '【 不・事・山・譲 】', '語呂は「富士山上」だけ！', '雑所得の赤字は相殺NG！'],
+    summary: '損益通算できるのは「不動産・事業・山林・譲渡（富士山上）」の4つだけ。雑所得の赤字は給与と相殺不可！',
+    comments: ['富士山上きたーー！', '雑所得が通算できたらみんなやるｗ', '事業所得ならいけるのに']
+  },
+  {
+    id: 'E04', f: 're', diagId: 'D_BLDG',
+    speaker: '🦆 マイホーム計画中',
+    chat: '「200㎡の土地（建蔽率60%・容積率200%）を買ったぞ！2階建てにするんだけど、延べ床面積は最大120㎡までしか無理？」',
+    optA: '延べ面積は400㎡までOK！',
+    optB: '120㎡までしか無理',
+    correct: 'A',
+    kinetic: ['1階の面積＝建蔽率(120㎡)', '全フロア合計＝容積率！', '【 200㎡ × 200% 】', '最大 400㎡ まで建つ！'],
+    summary: '建築面積（1階部分）の上限＝建蔽率、延べ面積（全階合計）の上限＝容積率（200㎡×200%＝400㎡）。',
+    comments: ['建蔽率と容積率ごっちゃになるやつ', '延べ＝容積率！', '400㎡はかなり豪邸ｗ']
+  },
+  {
+    id: 'I02', f: 'inh', diagId: 'D_INH_TIME',
+    speaker: '🦆 のんびり相続人',
+    chat: '「親が亡くなって借金だらけって知ってから半年経った。相続税の申告期限は10ヶ月だから、今からでも相続放棄できるっしょ！」',
+    optA: '放棄は3ヶ月以内で手遅れ',
+    optB: '10ヶ月以内なら放棄OK',
+    correct: 'A',
+    kinetic: ['相続放棄・限定承認は', '知った日から', '【 たった3ヶ月以内！ 】', '3ヶ月→4ヶ月→10ヶ月！'],
+    summary: '3ヶ月＝相続放棄・限定承認（家庭裁判所）、4ヶ月＝準確定申告、10ヶ月＝相続税申告。半年後はもう手遅れ！',
+    comments: ['3ヶ月はマジであっという間', '3・4・10のリズムで暗記', '家裁に行くのもポイント']
+  },
+  {
+    id: 'F03', f: 'fin', diagId: null,
+    speaker: '🦆 NISAガチ勢',
+    chat: '「新NISAって毎年フル満額で投資したら、1年間に最大いくらまで非課税枠に突っ込めるんだっけ？」',
+    optA: '年360万円（120万＋240万）',
+    optB: '年240万円（120万＋120万）',
+    correct: 'A',
+    kinetic: ['つみたて枠 120万', '＋ 成長投資枠 240万', '【 年間 360万円！ 】', '生涯上限は 1,800万円！'],
+    summary: '新NISAは年360万円（つみたて120万＋成長240万）、生涯非課税限度額1,800万円（うち成長枠は1,200万まで）。',
+    comments: ['年360万埋められる人うらやま', '120+240=360！', '売却したら翌年枠が復活するのも神']
+  },
+  {
+    id: 'L01', f: 'life', diagId: null,
+    speaker: '🦆 親切なFP合格者',
+    chat: '「FP3級に受かったから、友達のために『タダ（無償）』で確定申告書を作ってあげたよ！無料なら税理士法違反にならないよね？」',
+    optA: '無料でも税理士法違反！',
+    optB: '無料ならセーフ！',
+    correct: 'A',
+    kinetic: ['タダ（無償）でも', '個別具体的な税務相談・書類作成は', '【 完全アウト（税理士法違反）】', '一般的な制度説明だけOK！'],
+    summary: '税理士資格がないFPは、有償・無償を問わず個別具体的な税務判断や税務書類の作成は一切できない。',
+    comments: ['FP試験の第1問で絶対出るやつ', '無償でもアウト！', '親切心が犯罪になるパターンｗ']
+  },
+  {
+    id: 'E02', f: 're', diagId: null,
+    speaker: '🦆 不動産バイヤー',
+    chat: '「法務局の登記簿を見たらAさんが所有者になってたから信じて土地を買った！実はウソの登記だったらしいけど、登記を信じた俺は守られるよね？」',
+    optA: '守られない（公信力なし）',
+    optB: '守られる（公信力あり）',
+    correct: 'A',
+    kinetic: ['日本の不動産登記には', '【 公信力がない！ 】', '登記を信じても', 'ニセ所有者からは買えない！'],
+    summary: '不動産登記には「対抗力」はあるが「公信力」はない。登記簿を信じて取引しても真の所有者が優先される。',
+    comments: ['公信力なし＝超頻出ワード', '対抗力はあるけど公信力はない', '地面師が成立しちゃう理由がこれ']
+  },
+  {
+    id: 'I01', f: 'inh', diagId: null,
+    speaker: '🦆 相続計算マン',
+    chat: '「遺産が4,500万円あった！法定相続人は妻と子ども2人の合計3人なんだけど、相続税の基礎控除っていくらまで引ける？」',
+    optA: '4,800万円（相続税ゼロ！）',
+    optB: '3,800万円（課税される）',
+    correct: 'A',
+    kinetic: ['相続税の基礎控除は', '【 3,000万 ＋ 600万×人数 】', '3人なら 4,800万円！', '4,500万なら申告すら不要！'],
+    summary: '基礎控除＝3,000万円＋600万円×法定相続人の数。3人なら4,800万円なので、遺産4,500万円は全額非課税！',
+    comments: ['3000＋600×人数は呼吸するように暗記', '放棄した人も頭数に入れるよ', '基礎控除以下なら申告不要！']
+  },
+  {
+    id: 'T03', f: 'tax', diagId: null,
+    speaker: '🦆 定年退職おじさん',
+    chat: '「30年勤めた会社から退職金をもらうぞ！退職所得って、退職収入から退職所得控除を引いた残りにそのまま税金がかかるの？」',
+    optA: 'さらに「× 1/2」に減らせる！',
+    optB: 'そのまま全額に課税される',
+    correct: 'A',
+    kinetic: ['退職金は老後の命綱！', '（収入 − 退職所得控除）', '【 × 1/2 で税金激減！ 】', 'さらに分離課税で超優遇！'],
+    summary: '退職所得＝（収入金額 − 退職所得控除額）× 1/2。勤続20年以下は年40万、20年超の部分は年70万の控除！',
+    comments: ['×1/2が最強すぎる', '端数の月数は1年に切り上げ！', '退職金が税金で優遇されてる理由']
+  },
+  {
+    id: 'R03', f: 'risk', diagId: null,
+    speaker: '🦆 心配性な契約者',
+    chat: '「もし入ってる生命保険会社が倒産したら、俺の保険はゼロになっちゃうの！？保護機構ってどこまで守ってくれる？」',
+    optA: '責任準備金の90%まで補償',
+    optB: '元本1,000万円まで補償',
+    correct: 'A',
+    kinetic: ['銀行（預金保護）は1,000万', '生命保険の破綻時は…', '【 責任準備金の 90% 補償 】', '自賠責・地震は 100%！'],
+    summary: '生命保険契約者保護機構は責任準備金等の原則90%まで補償（損害保険の自動車・火災等は80%、自賠責・地震は100%）。',
+    comments: ['1000万は銀行のペイオフ！', '生保90%・損保80%！', '地震と自賠責は国が絡むから100%']
+  }
+];
+</script>
+  <script>(() => {
+  'use strict';
+
+  const FIELDS = window.FP3_FIELDS || {};
+  const ALL_QS = window.FP3_RUSH_QUESTIONS || [];
+  const DIAGRAMS = window.FP3_DIAGRAMS || [];
+  const BASE_EPISODES = window.FP3_LIVE_EPISODES || [];
+  const STORE_KEY = 'fp3buzz.v1';
+
+  const RANKS = [
+    { min: 0, title: '見習いアカウント', badge: '' },
+    { min: 300, title: 'FP発信者', badge: '' },
+    { min: 1000, title: '認証FPアカウント', badge: 'blue' },
+    { min: 5000, title: '万バズFP講師', badge: 'blue' },
+    { min: 15000, title: 'FP3級インフルエンサー', badge: 'gold' },
+    { min: 50000, title: '合格請負人', badge: 'gold' }
+  ];
+
+  const TRENDS = [
+    { cat: 'タックス・トレンド', word: '#富士山上（損益通算）', key: 'tax' },
+    { cat: '金融・トレンド', word: '#新NISA年360万', key: 'fin' },
+    { cat: '相続・トレンド', word: '#3000万プラス600万', key: 'inh' },
+    { cat: '不動産・トレンド', word: '#公信力はない', key: 're' },
+    { cat: 'リスク・トレンド', word: '#生保90損保80', key: 'risk' },
+    { cat: 'ライフ・トレンド', word: '#繰下げ0.7パーセント', key: 'life' }
+  ];
+
+  const $ = s => document.querySelector(s);
+  const $ = s => document.querySelectorAll(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null) continue;
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const k of kids) if (k != null) n.append(k);
+    return n;
+  };
+
+  const shuffle = arr => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const fmtNum = n => {
+    if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '万';
+    return n.toLocaleString('ja-JP');
+  };
+
+  const todayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  /* ---------- 永続データ ---------- */
+  const freshState = () => ({
+    followers: 12,
+    impressions: 120,
+    streak: 1,
+    lastDay: todayStr(),
+    rushBest: 0,
+    sound: true,
+    weakIds: [],
+    fieldStats: {}
+  });
+
+  let state = freshState();
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) state = Object.assign(freshState(), JSON.parse(raw));
+  } catch (_) {}
+
+  const save = () => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (_) {}
+  };
+
+  let activeView = 'live';
+  let activeField = 'all';
+  let combo = 0;
+
+  /* ---------- サウンド & 音声合成 & 紙吹雪 ---------- */
+  let audioCtx = null;
+  const PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+
+  const tone = (freq, dur, type = 'triangle', delay = 0, vol = 0.1) => {
+    if (!state.sound) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const t = audioCtx.currentTime + delay;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    } catch (_) {}
+  };
+
+  const sfxOk = c => {
+    const f = PENTA[Math.min(c - 1, PENTA.length - 1)];
+    tone(f, 0.1, 'triangle', 0, 0.12);
+    tone(f * 1.5, 0.18, 'sine', 0.05, 0.09);
+  };
+  const sfxNg = () => {
+    tone(160, 0.14, 'sawtooth', 0, 0.07);
+    tone(120, 0.2, 'sine', 0.07, 0.1);
+  };
+  const sfxBuzz = () => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.16, 'triangle', i * 0.06, 0.1));
+
+  // Web Speech API (受動視聴用の軽快な読み上げ)
+  const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  const speakShort = text => {
+    if (!state.sound || !synth) return;
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace(/[【】「」🦆⚡]/g, ''));
+      u.lang = 'ja-JP';
+      u.rate = 1.35;
+      synth.speak(u);
+    } catch (_) {}
+  };
+
+  const canvas = $('#fx-canvas');
+  const ctx = canvas.getContext('2d');
+  let parts = [];
+  let raf = 0;
+  const FX_COLORS = ['#1d9bf0', '#00ba7c', '#ffd400', '#f91880', '#ffffff'];
+
+  const confetti = (count, x, y) => {
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(window.innerWidth * dpr)) {
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = 0; i < count; i++) {
+      parts.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 14,
+        vy: -Math.random() * 10 - 3,
+        s: 4 + Math.random() * 5,
+        r: Math.random() * 6.28,
+        vr: (Math.random() - 0.5) * 0.35,
+        life: 50 + Math.floor(Math.random() * 25),
+        c: FX_COLORS[i % FX_COLORS.length]
+      });
+    }
+    if (!raf) raf = requestAnimationFrame(tickFx);
+  };
+
+  const tickFx = () => {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    parts = parts.filter(p => p.life > 0 && p.y < window.innerHeight + 30);
+    for (const p of parts) {
+      p.vy += 0.42;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.r += p.vr;
+      p.life--;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.r);
+      ctx.globalAlpha = Math.min(1, p.life / 20);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.66);
+      ctx.restore();
+    }
+    raf = parts.length ? requestAnimationFrame(tickFx) : 0;
+  };
+
+  let toastTimer = 0;
+  const pushNotify = msg => {
+    const t = $('#push-toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  };
+
+  /* ---------- 共通スコア処理 ---------- */
+  const getRank = followers => {
+    let current = RANKS[0];
+    for (const r of RANKS) if (followers >= r.min) current = r;
+    return current;
+  };
+
+  const recordAnswer = (q, isCorrect, fxOrigin) => {
+    const fs = state.fieldStats[q.f] || (state.fieldStats[q.f] = { n: 0, c: 0 });
+    fs.n++;
+
+    const today = todayStr();
+    if (state.lastDay !== today) {
+      state.streak++;
+      state.lastDay = today;
+    }
+
+    if (isCorrect) {
+      fs.c++;
+      combo++;
+      const mult = combo >= 10 ? 4 : combo >= 5 ? 2.5 : combo >= 3 ? 1.5 : 1;
+      const gainFollowers = Math.round((25 + Math.random() * 20) * mult);
+      const gainImp = Math.round((40 + Math.random() * 50) * mult);
+
+      const prevRank = getRank(state.followers).title;
+      state.followers += gainFollowers;
+      state.impressions += gainImp;
+      const nextRank = getRank(state.followers).title;
+
+      const wi = state.weakIds.indexOf(q.id);
+      if (wi >= 0) state.weakIds.splice(wi, 1);
+
+      sfxOk(combo);
+      if (fxOrigin) confetti(combo >= 5 ? 35 : 14, fxOrigin.x, fxOrigin.y);
+
+      if (nextRank !== prevRank) {
+        sfxBuzz();
+        pushNotify(`🎉 ランクアップ！「${nextRank}」になりました`);
+      } else if (combo === 5) {
+        sfxBuzz();
+        pushNotify(`🔥 5連続正解！あなたの解説がバズっています (+${gainFollowers}フォロワー)`);
+      }
+      save();
+      renderAllStats();
+      return { gainFollowers, gainImp };
+    } else {
+      combo = 0;
+      if (!state.weakIds.includes(q.id)) state.weakIds.push(q.id);
+      sfxNg();
+      save();
+      renderAllStats();
+      return { gainFollowers: 0, gainImp: 0 };
+    }
+  };
+
+  /* ---------- UIレンダリング ---------- */
+  const renderAllStats = () => {
+    const rank = getRank(state.followers);
+    $('#my-rank-name').textContent = rank.title;
+    const badge = $('#my-badge');
+    if (rank.badge) {
+      badge.hidden = false;
+      badge.className = rank.badge === 'gold' ? 'badge-blue badge-gold' : 'badge-blue';
+    } else {
+      badge.hidden = true;
+    }
+
+    $('#stat-followers').textContent = fmtNum(state.followers);
+    $('#stat-imp').textContent = fmtNum(state.impressions);
+    $('#plinko-yen').textContent = state.impressions.toLocaleString('ja-JP');
+    $('#stat-streak').textContent = state.streak;
+    $('#m-followers').textContent = fmtNum(state.followers);
+    if ($('#m-imp')) $('#m-imp').textContent = fmtNum(state.impressions);
+    $('#m-combo').textContent = combo;
+    $('#combo-pill').textContent = `🔥 ${combo} COMBO`;
+    $('#btn-sound').textContent = state.sound ? '🔊 音・読み上げ ON' : '🔇 音・読み上げ OFF';
+    $('#m-sound').textContent = state.sound ? '🔊' : '🔇';
+
+    const wc = $('#weak-count');
+    wc.textContent = state.weakIds.length;
+    wc.hidden = state.weakIds.length === 0;
+
+    const mList = $('#mastery-list');
+    mList.textContent = '';
+    Object.entries(FIELDS).forEach(([k, f]) => {
+      const st = state.fieldStats[k] || { n: 0, c: 0 };
+      const pct = st.n ? Math.round((st.c / st.n) * 100) : 0;
+      mList.append(
+        el('div', { class: 'mastery-row' },
+          el('div', { class: 'mastery-top' },
+            el('span', { text: `${f.icon} ${f.name}` }),
+            el('span', { text: st.n ? `${pct}% (${st.c}/${st.n})` : '未挑戦' })
+          ),
+          el('div', { class: 'mastery-track' },
+            el('div', { class: 'mastery-fill', style: `width:${pct}%; background:${f.color}` })
+          )
+        )
+      );
+    });
+  };
+
+  /* ---------- 下半分：常時稼働 物理ピンボール (Sludge / Plinko Engine) ---------- */
+  const pCanvas = $('#plinko-canvas');
+  const pCtx = pCanvas.getContext('2d');
+  let pBalls = [];
+  let pTexts = [];
+  let pPegs = [];
+  const BUCKETS = [
+    { label: '×1', mult: 5, color: '#2f3336' },
+    { label: '×3', mult: 15, color: '#1d9bf0' },
+    { label: '💎×10', mult: 50, color: '#ffd400' },
+    { label: '💎×10', mult: 50, color: '#f91880' },
+    { label: '×3', mult: 15, color: '#1d9bf0' },
+    { label: '×1', mult: 5, color: '#2f3336' }
+  ];
+
+  const dropPlinkoBalls = (count = 1, isGold = false) => {
+    const w = pCanvas.clientWidth || 400;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        pBalls.push({
+          x: w / 2 + (Math.random() - 0.5) * 44,
+          y: 12,
+          vx: (Math.random() - 0.5) * 1.8,
+          vy: 0.5,
+          r: isGold ? 6.5 : 5.5,
+          color: isGold ? '#ffd400' : '#00f2ea'
+        });
+      }, i * 110);
+    }
+  };
+
+  pCanvas.addEventListener('click', e => {
+    const r = pCanvas.getBoundingClientRect();
+    pBalls.push({
+      x: e.clientX - r.left,
+      y: 10,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 0.5,
+      r: 6,
+      color: '#ffd400'
+    });
+    tone(660, 0.05, 'sine', 0, 0.04);
+  });
+
+  const tickPlinko = () => {
+    if (activeView === 'live') {
+      const rect = pCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = rect.width || 400;
+      const h = rect.height || 200;
+      if (pCanvas.width !== Math.round(w * dpr) || pCanvas.height !== Math.round(h * dpr)) {
+        pCanvas.width = Math.round(w * dpr);
+        pCanvas.height = Math.round(h * dpr);
+        // ピンの再配置
+        pPegs = [];
+        const rows = 4;
+        const topY = 28;
+        const botY = h - 36;
+        for (let r = 0; r < rows; r++) {
+          const cols = r % 2 === 0 ? 7 : 6;
+          const y = topY + ((botY - topY) / (rows - 1)) * r;
+          const span = w * 0.76;
+          const startX = (w - span) / 2 + (r % 2 === 1 ? span / 12 : 0);
+          for (let c = 0; c < cols; c++) {
+            pPegs.push({ x: startX + (span / 6) * c, y, glow: 0 });
+          }
+        }
+      }
+
+      pCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      pCtx.clearRect(0, 0, w, h);
+
+      // バケット描画
+      const bw = w / BUCKETS.length;
+      BUCKETS.forEach((b, idx) => {
+        const bx = idx * bw;
+        pCtx.fillStyle = b.color;
+        pCtx.globalAlpha = 0.22;
+        pCtx.fillRect(bx + 3, h - 24, bw - 6, 20);
+        pCtx.globalAlpha = 1;
+        pCtx.fillStyle = '#e7e9ea';
+        pCtx.font = 'bold 11px sans-serif';
+        pCtx.textAlign = 'center';
+        pCtx.fillText(b.label, bx + bw / 2, h - 10);
+      });
+
+      // ピン描画
+      for (const peg of pPegs) {
+        if (peg.glow > 0) peg.glow -= 0.08;
+        pCtx.beginPath();
+        pCtx.arc(peg.x, peg.y, 3.5 + peg.glow * 3, 0, Math.PI * 2);
+        pCtx.fillStyle = peg.glow > 0 ? '#ffd400' : '#4b5563';
+        pCtx.fill();
+      }
+
+      // ボール物理更新
+      const nextBalls = [];
+      for (const b of pBalls) {
+        b.vy += 0.24;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.x < 12) { b.x = 12; b.vx = Math.abs(b.vx) * 0.7; }
+        if (b.x > w - 12) { b.x = w - 12; b.vx = -Math.abs(b.vx) * 0.7; }
+
+        for (const peg of pPegs) {
+          const dx = b.x - peg.x;
+          const dy = b.y - peg.y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = b.r + 3.5;
+          if (dist < minDist && dist > 0.001) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            b.x = peg.x + nx * minDist;
+            b.y = peg.y + ny * minDist;
+            b.vx = nx * 2.1 + (Math.random() - 0.5) * 0.9;
+            b.vy = -Math.abs(b.vy) * 0.55;
+            peg.glow = 1;
+            tone(440 + Math.random() * 240, 0.04, 'sine', 0, 0.025);
+          }
+        }
+
+        if (b.y >= h - 24) {
+          const bIdx = Math.min(BUCKETS.length - 1, Math.max(0, Math.floor(b.x / bw)));
+          const bucket = BUCKETS[bIdx];
+          state.impressions += bucket.mult;
+          state.followers += Math.ceil(bucket.mult / 5);
+          $('#plinko-yen').textContent = state.impressions.toLocaleString('ja-JP');
+          $('#stat-imp').textContent = fmtNum(state.impressions);
+          $('#stat-followers').textContent = fmtNum(state.followers);
+          pTexts.push({ x: b.x, y: h - 26, text: `+${bucket.mult}万`, life: 32, color: bucket.mult >= 50 ? '#ffd400' : '#00ba7c' });
+          tone(bucket.mult >= 50 ? 1046.5 : 784, 0.09, 'triangle', 0, 0.05);
+        } else {
+          nextBalls.push(b);
+        }
+      }
+      pBalls = nextBalls;
+
+      for (const b of pBalls) {
+        pCtx.beginPath();
+        pCtx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        pCtx.fillStyle = b.color;
+        pCtx.fill();
+      }
+
+      pTexts = pTexts.filter(t => t.life > 0);
+      for (const t of pTexts) {
+        t.y -= 0.7;
+        t.life--;
+        pCtx.globalAlpha = Math.min(1, t.life / 15);
+        pCtx.fillStyle = t.color;
+        pCtx.font = 'bold 12px sans-serif';
+        pCtx.textAlign = 'center';
+        pCtx.fillText(t.text, t.x, t.y);
+        pCtx.globalAlpha = 1;
+      }
+    }
+    requestAnimationFrame(tickPlinko);
+  };
+  requestAnimationFrame(tickPlinko);
+
+  // 放置していても4.5秒ごとに環境ボールが1個落ちて目を惹きつける
+  setInterval(() => {
+    if (activeView === 'live' && !livePaused && pBalls.length < 12) {
+      dropPlinkoBalls(1, false);
+    }
+  }, 4500);
+
+  /* ---------- 0. ライブ劇場（受動×論破 オートストーリーエンジン） ---------- */
+  let liveQueue = [];
+  let livePaused = false;
+  let liveToken = { dead: false };
+
+  // 全60問をライブ劇場エピソードとしても変換して統合
+  const buildAllEpisodes = () => {
+    const customIds = new Set(BASE_EPISODES.map(e => e.id));
+    const autoEps = ALL_QS.filter(q => !customIds.has(q.id)).map(q => {
+      const f = FIELDS[q.f];
+      const isOx = q.t === 'ox';
+      const optA = isOx ? (q.a ? '○ 正しい（ホント）' : '✕ 誤り（ウソ）') : q.c[0];
+      const optB = isOx ? (q.a ? '✕ 誤り（ウソ）' : '○ 正しい（ホント）') : q.c[1];
+      return {
+        id: q.id,
+        f: q.f,
+        diagId: (DIAGRAMS.find(d => d.qIds.includes(q.id)) || {}).id || null,
+        speaker: `🦆 迷える受検生 (${f.name})`,
+        chat: `「${q.q}」`,
+        optA,
+        optB,
+        correct: 'A',
+        kinetic: ['結論行くよ！', `【 ${optA} 】`, q.point],
+        summary: `${q.point}（${q.trap}）`,
+        comments: ['ここテスト頻出！', 'なるほどね', '引っかかるところだったｗ']
+      };
+    });
+    const all = [...BASE_EPISODES, ...autoEps];
+    return activeField === 'all' ? shuffle(all) : shuffle(all.filter(e => e.f === activeField));
+  };
+
+  const waitMs = (ms, tk, onProgress) => new Promise(res => {
+    let left = ms;
+    let last = performance.now();
+    const step = now => {
+      if (tk.dead) return res(false);
+      const dt = Math.min(100, now - last);
+      last = now;
+      if (!livePaused && activeView === 'live') left -= dt;
+      if (onProgress) onProgress(Math.max(0, left) / ms, Math.max(0, left));
+      if (left <= 0) return res(true);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+
+  const pushLiveComment = text => {
+    const box = $('#live-comments');
+    if (!box) return;
+    const node = el('div', { class: 'live-cmt', text: `💬 ${text}` });
+    box.append(node);
+    while (box.children.length > 4) box.firstElementChild.remove();
+    setTimeout(() => node.remove(), 2800);
+  };
+
+  const playNextEpisode = async () => {
+    liveToken.dead = true;
+    const tk = { dead: false };
+    liveToken = tk;
+
+    if (!liveQueue.length) liveQueue = buildAllEpisodes();
+    const ep = liveQueue.shift();
+    if (!ep) return;
+
+    const f = FIELDS[ep.f];
+    $('#live-cat-tag').textContent = `${f.icon} ${f.name}`;
+    $('#live-cat-tag').style.background = f.color;
+    $('#live-cat-tag').style.color = '#000';
+    $('#live-viewers').textContent = (4100 + Math.floor(Math.random() * 900)).toLocaleString('ja-JP');
+
+    // Step 1: 相談者のヤバい発言をポップ表示
+    const bubble = $('#live-drama-bubble');
+    bubble.style.animation = 'none';
+    void bubble.offsetWidth;
+    bubble.style.animation = '';
+    $('#live-speaker').textContent = ep.speaker;
+    $('#live-chat-text').textContent = ep.chat;
+
+    $('#live-judge-box').hidden = true;
+    $('#live-kinetic-box').hidden = true;
+
+    tone(480, 0.07, 'sine', 0, 0.05);
+    dropPlinkoBalls(1, false);
+    pushLiveComment(ep.comments[0] || 'えっ！？');
+
+    if (!(await waitMs(1700, tk))) return;
+
+    // Step 2: 3.5秒の「論破チャンス（介入ウィンドウ）」！放置でもそのまま進む
+    const judgeBox = $('#live-judge-box');
+    judgeBox.hidden = false;
+    const swap = Math.random() < 0.5;
+    const textA = swap ? ep.optB : ep.optA;
+    const textB = swap ? ep.optA : ep.optB;
+    const correctSide = swap ? 'B' : 'A';
+
+    const btnA = $('#live-opt-a');
+    const btnB = $('#live-opt-b');
+    btnA.textContent = textA;
+    btnB.textContent = textB;
+    btnA.disabled = false;
+    btnB.disabled = false;
+
+    let userChoice = null;
+    const judgeTk = { dead: false };
+    btnA.onclick = () => { userChoice = 'A'; judgeTk.dead = true; };
+    btnB.onclick = () => { userChoice = 'B'; judgeTk.dead = true; };
+
+    const barFill = $('#judge-bar-fill');
+    const secLabel = $('#judge-sec');
+    await waitMs(3800, {
+      get dead() { return tk.dead || judgeTk.dead; }
+    }, (frac, left) => {
+      barFill.style.transform = `scaleX(${frac})`;
+      secLabel.textContent = `${(left / 1000).toFixed(1)}s`;
+    });
+    if (tk.dead) return;
+
+    judgeBox.hidden = true;
+    const qObj = ALL_QS.find(q => q.id === ep.id) || { id: ep.id, f: ep.f };
+
+    if (userChoice) {
+      const ok = userChoice === correctSide;
+      if (ok) {
+        recordAnswer(qObj, true, { x: window.innerWidth / 2, y: window.innerHeight * 0.35 });
+        dropPlinkoBalls(8, true);
+        pushLiveComment('⚡ 論破キタ━━(ﾟ∀ﾟ)━━!!');
+      } else {
+        recordAnswer(qObj, false, null);
+        pushLiveComment('あぶねぇ引っかかったｗ');
+      }
+    } else {
+      // 100%受動視聴でも止めずに報酬ボールを2個落とす！
+      dropPlinkoBalls(2, false);
+      pushLiveComment(ep.comments[1] || '正解はどっちだ？');
+    }
+
+    // Step 3: キネティック字幕（1〜3語が巨大バウンス）＋ 図解アニメ
+    const kBox = $('#live-kinetic-box');
+    const kWord = $('#kinetic-word');
+    const kSum = $('#kinetic-summary');
+    const kDiag = $('#kinetic-diag');
+    kBox.hidden = false;
+    kSum.textContent = `💡 ${ep.summary}`;
+    kDiag.innerHTML = '';
+
+    if (ep.diagId) {
+      const d = DIAGRAMS.find(x => x.id === ep.diagId);
+      if (d) kDiag.innerHTML = d.svg;
+    }
+
+    for (let i = 0; i < ep.kinetic.length; i++) {
+      const phrase = ep.kinetic[i];
+      kWord.textContent = phrase;
+      kWord.className = 'kinetic-word pop' + (phrase.includes('【') ? ' highlight' : '');
+      tone(523.25 * Math.pow(1.12, i), 0.09, 'triangle', 0, 0.08);
+      if (i === 1) speakShort(phrase + '。' + ep.summary);
+      if (i === ep.kinetic.length - 1 && ep.comments[2]) pushLiveComment(ep.comments[2]);
+      if (!(await waitMs(1150, tk))) return;
+    }
+
+    if (!(await waitMs(1800, tk))) return;
+    playNextEpisode();
+  };
+
+  $('#btn-live-pause').addEventListener('click', () => {
+    livePaused = !livePaused;
+    $('#btn-live-pause').textContent = livePaused ? '▶ 再開' : '⏸ 一時停止';
+  });
+
+  $('#btn-live-skip').addEventListener('click', () => {
+    playNextEpisode();
+  });
+
+  /* ---------- ジャンルフィルタ ---------- */
+  const renderFieldChips = () => {
+    const items = [['all', 'すべて'], ...Object.entries(FIELDS).map(([k, f]) => [k, f.name])];
+    ['#field-chips', '#mobile-field-chips'].forEach(sel => {
+      const wrap = $(sel);
+      if (!wrap) return;
+      wrap.textContent = '';
+      items.forEach(([key, label]) => {
+        wrap.append(
+          el('button', {
+            type: 'button',
+            class: `f-chip ${activeField === key ? 'active' : ''}`,
+            text: label,
+            onclick: () => {
+              activeField = key;
+              renderFieldChips();
+              liveQueue = buildAllEpisodes();
+              if (activeView === 'live') playNextEpisode();
+              if (activeView === 'swipe') initSwipeDeck();
+              if (activeView === 'timeline') initTimeline();
+            }
+          })
+        );
+      });
+    });
+  };
+
+  const renderTrends = () => {
+    const list = $('#trend-list');
+    list.textContent = '';
+    TRENDS.forEach(tr => {
+      const btn = el('button', {
+        type: 'button',
+        class: 'trend-item',
+        style: 'display:block; width:100%; text-align:left;',
+        onclick: () => {
+          activeField = tr.key;
+          renderFieldChips();
+          liveQueue = buildAllEpisodes();
+          if (activeView === 'live') playNextEpisode();
+          else switchView('live');
+        }
+      },
+        el('div', { class: 'trend-cat', text: tr.cat }),
+        el('div', { class: 'trend-word', text: tr.word }),
+        el('div', { class: 'trend-cnt', text: 'ライブ劇場でこの分野を流す →' })
+      );
+      list.append(btn);
+    });
+  };
+
+  /* ---------- 1. スワイプ仕分けデッキ ---------- */
+  let swipeQueue = [];
+  let topCardEl = null;
+
+  const getFilteredOx = () => {
+    const base = ALL_QS.filter(q => q.t === 'ox');
+    return activeField === 'all' ? base : base.filter(q => q.f === activeField);
+  };
+
+  const initSwipeDeck = () => {
+    swipeQueue = shuffle(getFilteredOx());
+    renderSwipeStack();
+  };
+
+  const createSwipeCardEl = (q, isBehind) => {
+    const f = FIELDS[q.f];
+    const card = el('div', { class: `swipe-card ${isBehind ? 'behind' : ''}` });
+    const stampFact = el('div', { class: 'card-stamp stamp-fact', text: 'FACT ○' });
+    const stampFake = el('div', { class: 'card-stamp stamp-fake', text: 'FAKE ✕' });
+
+    card.append(
+      stampFact,
+      stampFake,
+      el('div', { class: 'sc-top' },
+        el('span', { class: 'sc-field', text: `${f.icon} ${f.name}`, style: `background:${f.color}` }),
+        el('span', { class: 'sc-badge', text: q.badge })
+      ),
+      el('p', { class: 'sc-question', text: q.q }),
+      el('div', { class: 'sc-footer' },
+        el('span', { text: '← ウソ (✕)' }),
+        el('span', { text: 'ホント (○) →' })
+      )
+    );
+
+    if (!isBehind) {
+      let startX = 0, dx = 0, dragging = false;
+
+      card.addEventListener('pointerdown', e => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        dragging = true;
+        startX = e.clientX;
+        dx = 0;
+        card.classList.add('dragging');
+        card.setPointerCapture(e.pointerId);
+      });
+
+      card.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        dx = e.clientX - startX;
+        const rot = dx * 0.06;
+        card.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+        const ratio = Math.min(1, Math.abs(dx) / 100);
+        stampFact.style.opacity = dx > 15 ? String(ratio) : '0';
+        stampFake.style.opacity = dx < -15 ? String(ratio) : '0';
+      });
+
+      const finishDrag = () => {
+        if (!dragging) return;
+        dragging = false;
+        card.classList.remove('dragging');
+        if (dx > 90) commitSwipe(true, card);
+        else if (dx < -90) commitSwipe(false, card);
+        else {
+          card.style.transform = '';
+          stampFact.style.opacity = '0';
+          stampFake.style.opacity = '0';
+        }
+      };
+
+      card.addEventListener('pointerup', finishDrag);
+      card.addEventListener('pointercancel', finishDrag);
+    }
+
+    return card;
+  };
+
+  const renderSwipeStack = () => {
+    const stage = $('#deck-stage');
+    stage.textContent = '';
+    if (!swipeQueue.length) swipeQueue = shuffle(getFilteredOx());
+
+    const currentQ = swipeQueue[0];
+    const nextQ = swipeQueue[1];
+
+    if (nextQ) stage.append(createSwipeCardEl(nextQ, true));
+    if (currentQ) {
+      topCardEl = createSwipeCardEl(currentQ, false);
+      stage.append(topCardEl);
+    }
+  };
+
+  const createInlineDiagBtn = qId => {
+    const diag = DIAGRAMS.find(d => d.qIds.includes(qId));
+    if (!diag) return null;
+    const wrap = el('div');
+    const btn = el('button', {
+      type: 'button',
+      class: 'inline-diag-btn',
+      text: `🎬 図解アニメを見る（${diag.title}）`,
+      onclick: () => {
+        if (wrap.querySelector('.inline-diag-wrap')) return;
+        const box = el('div', { class: 'inline-diag-wrap' });
+        box.innerHTML = diag.svg;
+        wrap.append(box);
+        btn.hidden = true;
+      }
+    });
+    wrap.append(btn);
+    return wrap;
+  };
+
+  const commitSwipe = (guessTrue, cardEl = topCardEl) => {
+    if (!swipeQueue.length || !cardEl) return;
+    const q = swipeQueue.shift();
+    const isCorrect = guessTrue === q.a;
+
+    const dir = guessTrue ? 1 : -1;
+    cardEl.style.transition = 'transform 0.28s ease-out, opacity 0.28s ease-out';
+    cardEl.style.transform = `translateX(${dir * 420}px) rotate(${dir * 22}deg)`;
+    cardEl.style.opacity = '0';
+
+    const rect = cardEl.getBoundingClientRect();
+    const res = recordAnswer(q, isCorrect, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+
+    const fb = $('#swipe-feedback');
+    fb.hidden = false;
+    fb.className = `swipe-feedback ${isCorrect ? 'ok' : 'ng'}`;
+    fb.innerHTML = '';
+    fb.append(
+      el('b', { text: isCorrect ? `✅ 正解！ +${res.gainFollowers}フォロワー` : `❌ 正解は「${q.a ? '○ ホント' : '✕ ウソ'}」` }),
+      el('p', { text: `💡 ${q.point}` }),
+      createInlineDiagBtn(q.id)
+    );
+
+    setTimeout(() => renderSwipeStack(), 170);
+  };
+
+  $('#btn-fake').addEventListener('click', () => commitSwipe(false));
+  $('#btn-fact').addEventListener('click', () => commitSwipe(true));
+
+  /* ---------- 2. タイムラインビュー ---------- */
+  let tlPool = [];
+  let tlCursor = 0;
+
+  const initTimeline = () => {
+    const feed = $('#timeline-feed');
+    feed.textContent = '';
+    const base = activeField === 'all' ? ALL_QS : ALL_QS.filter(q => q.f === activeField);
+    tlPool = shuffle(base);
+    tlCursor = 0;
+    appendTimelineBatch(6);
+  };
+
+  const appendTimelineBatch = count => {
+    const feed = $('#timeline-feed');
+    const oldMore = feed.querySelector('.load-more-btn');
+    if (oldMore) oldMore.remove();
+
+    const slice = tlPool.slice(tlCursor, tlCursor + count);
+    tlCursor += slice.length;
+
+    slice.forEach(q => {
+      const f = FIELDS[q.f];
+      const post = el('article', { class: 'post-card' });
+      const optsWrap = el('div', { class: 'post-options' });
+      const noteSlot = el('div');
+
+      const choices = q.t === 'ox'
+        ? [{ txt: '○ 正しい（ホント）', ok: q.a === true }, { txt: '✕ 誤り（ウソ）', ok: q.a === false }]
+        : shuffle(q.c.map((txt, idx) => ({ txt, ok: idx === 0 })));
+
+      const btns = choices.map(ch => {
+        const b = el('button', { type: 'button', class: 'post-opt', text: ch.txt });
+        b.dataset.ok = String(ch.ok);
+        b.addEventListener('click', () => {
+          if (post.dataset.done) return;
+          post.dataset.done = '1';
+          btns.forEach(x => {
+            x.disabled = true;
+            if (x.dataset.ok === 'true') x.classList.add('is-ok');
+          });
+          if (b.dataset.ok !== 'true') b.classList.add('is-ng');
+
+          const r = b.getBoundingClientRect();
+          const res = recordAnswer(q, b.dataset.ok === 'true', { x: r.left + r.width / 2, y: r.top });
+
+          noteSlot.append(
+            el('div', { class: 'comm-note' },
+              el('div', { class: 'comm-note-head', text: b.dataset.ok === 'true' ? `🌐 コミュニティノート採用！ +${res.gainFollowers}フォロワー` : '🌐 コミュニティノート（解説）' }),
+              el('p', { class: 'comm-note-point', text: `💡 ${q.point}` }),
+              el('p', { class: 'comm-note-trap', text: q.trap }),
+              createInlineDiagBtn(q.id)
+            )
+          );
+        });
+        optsWrap.append(b);
+        return b;
+      });
+
+      post.append(
+        el('div', { class: 'post-head' },
+          el('div', { class: 'post-avatar', text: f.icon, style: `background:${f.color}` }),
+          el('div', {},
+            el('div', { class: 'post-author', text: `${f.name}出題アカウント` }),
+            el('div', { class: 'post-meta', text: `${f.handle} · ${q.badge}` })
+          )
+        ),
+        el('p', { class: 'post-body', text: q.q }),
+        optsWrap,
+        noteSlot
+      );
+      feed.append(post);
+    });
+
+    if (tlCursor < tlPool.length) {
+      feed.append(
+        el('button', {
+          type: 'button',
+          class: 'load-more-btn',
+          text: 'さらに投稿を読み込む ↓',
+          onclick: () => appendTimelineBatch(6)
+        })
+      );
+    }
+  };
+
+  /* ---------- 3. 30秒 RUSH ---------- */
+  let rushInterval = 0;
+  let rushLeft = 30.0;
+  let rushScore = 0;
+  let rushQ = null;
+  let rushDeck = [];
+
+  const nextRushQ = () => {
+    if (!rushDeck.length) rushDeck = shuffle(ALL_QS.filter(q => q.t === 'ox'));
+    rushQ = rushDeck.pop();
+    const f = FIELDS[rushQ.f];
+    $('#rush-tag').textContent = `${f.icon} ${f.name}`;
+    $('#rush-q').textContent = rushQ.q;
+  };
+
+  const startRush = () => {
+    rushLeft = 30.0;
+    rushScore = 0;
+    rushDeck = shuffle(ALL_QS.filter(q => q.t === 'ox'));
+    $('#rush-intro').hidden = true;
+    $('#rush-result').hidden = true;
+    $('#rush-play').hidden = false;
+    $('#rush-score-num').textContent = '0';
+    nextRushQ();
+
+    clearInterval(rushInterval);
+    let last = performance.now();
+    rushInterval = setInterval(() => {
+      const now = performance.now();
+      rushLeft -= (now - last) / 1000;
+      last = now;
+      if (rushLeft <= 0) {
+        clearInterval(rushInterval);
+        endRush();
+      } else {
+        $('#rush-timer').textContent = rushLeft.toFixed(1);
+      }
+    }, 80);
+  };
+
+  const answerRush = guessTrue => {
+    if (!rushQ || rushLeft <= 0) return;
+    const ok = guessTrue === rushQ.a;
+    if (ok) {
+      rushScore++;
+      rushLeft += 1.0;
+      $('#rush-score-num').textContent = String(rushScore);
+      recordAnswer(rushQ, true, { x: window.innerWidth / 2, y: window.innerHeight * 0.4 });
+    } else {
+      recordAnswer(rushQ, false, null);
+    }
+    nextRushQ();
+  };
+
+  const endRush = () => {
+    $('#rush-play').hidden = true;
+    $('#rush-result').hidden = false;
+    $('#rush-res-score').textContent = String(rushScore);
+    const isBest = rushScore > state.rushBest;
+    if (isBest) {
+      state.rushBest = rushScore;
+      save();
+      sfxBuzz();
+      confetti(60, window.innerWidth / 2, window.innerHeight * 0.4);
+    }
+    $('#rush-best-score').textContent = String(state.rushBest);
+    $('#rush-res-gain').textContent = isBest ? '🏆 NEW RECORD 更新!!' : `ハイスコア: ${state.rushBest}問`;
+  };
+
+  $('#btn-rush-start').addEventListener('click', startRush);
+  $('#btn-rush-retry').addEventListener('click', startRush);
+  $('#rush-btn-fake').addEventListener('click', () => answerRush(false));
+  $('#rush-btn-fact').addEventListener('click', () => answerRush(true));
+
+  /* ---------- 4. 図解アニメ一覧 ---------- */
+  const renderDiagrams = () => {
+    const list = $('#diagrams-list');
+    list.textContent = '';
+    DIAGRAMS.forEach(d => {
+      const f = FIELDS[d.f];
+      const stage = el('div', { class: 'diag-stage' });
+      stage.innerHTML = d.svg;
+
+      const replayBtn = el('button', {
+        type: 'button',
+        class: 'diag-replay',
+        text: '↻ 再生',
+        onclick: () => {
+          stage.innerHTML = '';
+          void stage.offsetWidth;
+          stage.innerHTML = d.svg;
+          tone(784, 0.08);
+        }
+      });
+
+      list.append(
+        el('article', { class: 'diag-card' },
+          el('div', { class: 'diag-head' },
+            el('div', {},
+              el('h3', { class: 'diag-title', text: `${f.icon} ${d.title}` }),
+              el('p', { class: 'diag-sub', text: d.sub })
+            ),
+            replayBtn
+          ),
+          stage
+        )
+      );
+    });
+  };
+
+  /* ---------- 5. 弱点ノート ---------- */
+  const renderNotes = () => {
+    const list = $('#notes-list');
+    list.textContent = '';
+    if (!state.weakIds.length) {
+      list.append(
+        el('div', { class: 'note-item', style: 'text-align:center; padding:32px;' },
+          el('b', { text: '弱点ノートは空です ✨' }),
+          el('p', { style: 'color:var(--muted); font-size:0.85rem;', text: 'ライブ劇場やスワイプ仕分けで間違えた問題が自動でここにピン留めされます。' })
+        )
+      );
+      return;
+    }
+
+    state.weakIds.forEach(id => {
+      const q = ALL_QS.find(x => x.id === id);
+      if (!q) return;
+      const f = FIELDS[q.f];
+      list.append(
+        el('div', { class: 'note-item' },
+          el('div', { class: 'note-item-head' },
+            el('span', { text: `${f.icon} ${f.name} · ${q.badge}` }),
+            el('button', {
+              type: 'button',
+              class: 'note-clear-btn',
+              text: '✓ 克服した',
+              onclick: () => {
+                state.weakIds = state.weakIds.filter(x => x !== id);
+                save();
+                renderAllStats();
+                renderNotes();
+              }
+            })
+          ),
+          el('p', { style: 'margin:0 0 8px; font-weight:700;', text: q.q }),
+          el('p', { style: 'margin:0 0 4px; color:var(--fact); font-weight:700; font-size:0.86rem;', text: `💡 結論：${q.point}` }),
+          el('p', { style: 'margin:0; color:var(--muted); font-size:0.8rem;', text: q.trap })
+        )
+      );
+    });
+  };
+
+  /* ---------- ビュー切替 ---------- */
+  const VIEW_TITLES = {
+    live: '📺 ライブ劇場（受動×論破）',
+    swipe: '⚡ スワイプ仕分け',
+    timeline: '💬 タイムライン',
+    rush: '🔥 30秒 RUSH',
+    diagrams: '🎬 図解アニメ',
+    notes: '📌 弱点ノート'
+  };
+
+  const switchView = view => {
+    activeView = view;
+    clearInterval(rushInterval);
+    $('#view-title').textContent = VIEW_TITLES[view];
+    $('.view-pane').forEach(p => { p.hidden = p.id !== `view-${view}`; });
+    $('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+
+    if (view === 'live') playNextEpisode();
+    if (view === 'timeline' && !$('#timeline-feed').children.length) initTimeline();
+    if (view === 'diagrams') renderDiagrams();
+    if (view === 'notes') renderNotes();
+    if (view === 'rush') {
+      $('#rush-best-score').textContent = String(state.rushBest);
+      $('#rush-intro').hidden = false;
+      $('#rush-play').hidden = true;
+      $('#rush-result').hidden = true;
+    }
+  };
+
+  $('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  const toggleSound = () => {
+    state.sound = !state.sound;
+    if (!state.sound && synth) synth.cancel();
+    save();
+    renderAllStats();
+    if (state.sound) tone(660, 0.08);
+  };
+  $('#btn-sound').addEventListener('click', toggleSound);
+  $('#m-sound').addEventListener('click', toggleSound);
+
+  $('#btn-reset').addEventListener('click', () => {
+    if (!confirm('フォロワー・資産データをすべてリセットしますか？')) return;
+    state = freshState();
+    combo = 0;
+    save();
+    renderAllStats();
+    initSwipeDeck();
+    if (activeView === 'notes') renderNotes();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (activeView !== 'swipe') return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); commitSwipe(false); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); commitSwipe(true); }
+  });
+
+  /* ---------- スマホ用タッチ音声アンロック & PWA ---------- */
+  const unlockMobileAudio = () => {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (_) {}
+    document.removeEventListener('pointerdown', unlockMobileAudio);
+  };
+  document.addEventListener('pointerdown', unlockMobileAudio, { passive: true });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  /* ---------- 起動 ---------- */
+  renderAllStats();
+  renderFieldChips();
+  renderTrends();
+  initSwipeDeck();
+  liveQueue = buildAllEpisodes();
+  playNextEpisode();
+})();
+</script>
+</body>
+</html>

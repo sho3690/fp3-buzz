@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FP3 BUZZ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>FP3 BUZZ — 眺めるだけで脳に刺さるFP3級ライブ＆SNS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="push-toast" class="push-toast" aria-live="polite"></div>
+  <canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+  <div class="shell">
+    <!-- 左サイドバー：アカウント＆モード切替 -->
+    <aside class="sidebar-left">
+      <div class="brand">
+        <span class="brand-logo">𝕏</span>
+        <span class="brand-name">FP3 BUZZ</span>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="my-avatar" id="my-avatar">FP</div>
+          <div>
+            <div class="my-name-row">
+              <b id="my-rank-name">見習いアカウント</b>
+              <span id="my-badge" class="badge-blue" hidden>✔</span>
+            </div>
+            <div class="my-handle">@fp3_challenger</div>
+          </div>
+        </div>
+        <div class="profile-metrics">
+          <div><b id="stat-followers">0</b><span>フォロワー</span></div>
+          <div><b id="stat-imp">0</b><span>総資産(万)</span></div>
+          <div><b id="stat-streak">0</b><span>日連続</span></div>
+        </div>
+      </div>
+
+      <nav class="nav-menu" aria-label="モード切替">
+        <button type="button" class="nav-item active" data-view="live">
+          <span class="nav-ico">📺</span>
+          <span>ライブ劇場 (放置OK)</span>
+        </button>
+        <button type="button" class="nav-item" data-view="swipe">
+          <span class="nav-ico">⚡</span>
+          <span>スワイプ仕分け</span>
+        </button>
+        <button type="button" class="nav-item" data-view="timeline">
+          <span class="nav-ico">💬</span>
+          <span>タイムライン</span>
+        </button>
+        <button type="button" class="nav-item" data-view="rush">
+          <span class="nav-ico">🔥</span>
+          <span>30秒RUSH</span>
+        </button>
+        <button type="button" class="nav-item" data-view="diagrams">
+          <span class="nav-ico">🎬</span>
+          <span>図解アニメ</span>
+        </button>
+        <button type="button" class="nav-item" data-view="notes">
+          <span class="nav-ico">📌</span>
+          <span>弱点ノート</span>
+          <span class="nav-count" id="weak-count" hidden>0</span>
+        </button>
+      </nav>
+
+      <div class="field-filter-wrap">
+        <div class="side-label">出題ジャンル</div>
+        <div class="field-chips" id="field-chips"></div>
+      </div>
+
+      <div class="sound-row">
+        <button type="button" class="pill-toggle" id="btn-sound">🔊 音・読み上げ ON</button>
+      </div>
+    </aside>
+
+    <!-- 中央メインエリア -->
+    <main class="main-col">
+      <header class="top-bar">
+        <div class="top-bar-title" id="view-title">📺 ライブ劇場（受動×論破）</div>
+        <div class="combo-pill" id="combo-pill">🔥 0 COMBO</div>
+      </header>
+
+      <!-- モバイル用コンパクトステータス & ジャンルバー -->
+      <div class="mobile-bar">
+        <span>👤 <b id="m-followers">0</b></span>
+        <span>💰 <b id="m-imp">120</b>万</span>
+        <span>🔥 <b id="m-combo">0</b>連続</span>
+        <button type="button" id="m-sound" class="m-btn">🔊</button>
+      </div>
+      <div class="mobile-chips" id="mobile-field-chips" aria-label="ジャンル切替"></div>
+
+      <!-- 0. ライブ劇場ビュー（上：自動進行チャット劇＆キネティック字幕 / 下：物理ピンボール） -->
+      <section id="view-live" class="view-pane active">
+        <div class="live-split">
+          <!-- 上半分：修羅場チャット＆キネティック字幕＆図解 -->
+          <div class="live-top">
+            <div class="live-header-bar">
+              <span class="live-pill"><i class="live-dot"></i> LIVE · <b id="live-viewers">4,280</b>人視聴</span>
+              <span class="live-cat-tag" id="live-cat-tag">ライフ</span>
+              <div class="live-ctrl-btns">
+                <button type="button" class="mini-ctrl" id="btn-live-pause">⏸ 一時停止</button>
+                <button type="button" class="mini-ctrl" id="btn-live-skip">⏭ 次へ</button>
+              </div>
+            </div>
+
+            <!-- 相談者の吹き出し -->
+            <div class="drama-bubble" id="live-drama-bubble">
+              <div class="drama-speaker" id="live-speaker">🦆 相談者</div>
+              <p class="drama-text" id="live-chat-text">読み込み中…</p>
+            </div>
+
+            <!-- ステージ中央：3.5秒の論破チャンス OR キネティック字幕＆図解 -->
+            <div class="live-center-stage">
+              <!-- A. 3.5秒論破介入ボックス（放置でも自動で進む） -->
+              <div class="judge-box" id="live-judge-box" hidden>
+                <div class="judge-head">
+                  <span>⚡ 論破チャンス！（放置でも自動解説へ進みます）</span>
+                  <b id="judge-sec">3.5s</b>
+                </div>
+                <div class="judge-bar-track"><div class="judge-bar-fill" id="judge-bar-fill"></div></div>
+                <div class="judge-btns">
+                  <button type="button" class="judge-btn" id="live-opt-a"></button>
+                  <button type="button" class="judge-btn" id="live-opt-b"></button>
+                </div>
+              </div>
+
+              <!-- B. キネティック字幕＆結論・ミニ図解 -->
+              <div class="kinetic-box" id="live-kinetic-box" hidden>
+                <div class="kinetic-word" id="kinetic-word"></div>
+                <div class="kinetic-summary" id="kinetic-summary"></div>
+                <div class="kinetic-diag" id="kinetic-diag"></div>
+              </div>
+            </div>
+
+            <!-- ニコニコ/TikTok Live風の視聴者コメントストリーム -->
+            <div class="live-comments" id="live-comments" aria-hidden="true"></div>
+          </div>
+
+          <!-- 下半分：常時動く物理ピンボール（Sludge / Split-Screen Retention） -->
+          <div class="plinko-bottom">
+            <div class="plinko-bar">
+              <span>🎰 資産マイニング盤（見てるだけで玉が落ちる・論破で大量投下）</span>
+              <b class="plinko-money">総資産 ¥<span id="plinko-yen">120</span>万</b>
+            </div>
+            <canvas id="plinko-canvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. スワイプ仕分けビュー（Tinder / TikTok 式物理ドラッグ） -->
+      <section id="view-swipe" class="view-pane" hidden>
+        <div class="swipe-hint-bar">
+          <span class="hint-left">← ウソ (×)</span>
+          <span class="hint-mid">カードを左右に弾く / キー ← →</span>
+          <span class="hint-right">ホント (○) →</span>
+        </div>
+
+        <div class="deck-stage" id="deck-stage">
+          <div class="deck-empty" id="deck-empty" hidden></div>
+        </div>
+
+        <div class="swipe-actions">
+          <button type="button" class="act-btn act-fake" id="btn-fake" aria-label="ウソ（誤り）">
+            <span>✕</span><small>ウソ</small>
+          </button>
+          <button type="button" class="act-btn act-fact" id="btn-fact" aria-label="ホント（正しい）">
+            <span>○</span><small>ホント</small>
+          </button>
+        </div>
+
+        <div class="swipe-feedback" id="swipe-feedback" hidden></div>
+      </section>
+
+      <!-- 2. タイムラインビュー（X風の無限フィード＋コミュニティノート） -->
+      <section id="view-timeline" class="view-pane" hidden>
+        <div class="timeline-feed" id="timeline-feed"></div>
+      </section>
+
+      <!-- 3. 30秒RUSHビュー（アーケード・タイムアタック） -->
+      <section id="view-rush" class="view-pane" hidden>
+        <div class="rush-arena" id="rush-arena">
+          <div class="rush-intro" id="rush-intro">
+            <div class="rush-fire">🔥</div>
+            <h2>30秒 RUSH チャレンジ</h2>
+            <p>制限時間30秒！○×問題を高速でさばききれ。<br>正解で <b>+1秒</b>、連続コンボでフォロワー爆増！</p>
+            <div class="rush-best">ハイスコア: <b id="rush-best-score">0</b> 問</div>
+            <button type="button" class="primary-cta" id="btn-rush-start">RUSH スタート</button>
+          </div>
+
+          <div class="rush-play" id="rush-play" hidden>
+            <div class="rush-hud">
+              <div class="rush-timer" id="rush-timer">30.0</div>
+              <div class="rush-score">正解 <b id="rush-score-num">0</b></div>
+            </div>
+            <div class="rush-card" id="rush-card">
+              <span class="rush-tag" id="rush-tag"></span>
+              <p class="rush-q" id="rush-q"></p>
+            </div>
+            <div class="rush-btns">
+              <button type="button" class="act-btn act-fake" id="rush-btn-fake">✕ ウソ</button>
+              <button type="button" class="act-btn act-fact" id="rush-btn-fact">○ ホント</button>
+            </div>
+          </div>
+
+          <div class="rush-result" id="rush-result" hidden>
+            <h2 id="rush-res-title">TIME UP!</h2>
+            <p class="rush-res-num"><b id="rush-res-score">0</b> 問正解</p>
+            <p id="rush-res-gain" class="rush-res-gain"></p>
+            <button type="button" class="primary-cta" id="btn-rush-retry">もう1回挑戦</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 図解アニメビュー -->
+      <section id="view-diagrams" class="view-pane" hidden>
+        <div class="diagrams-list" id="diagrams-list"></div>
+      </section>
+
+      <!-- 5. 弱点ノートビュー -->
+      <section id="view-notes" class="view-pane" hidden>
+        <div class="notes-list" id="notes-list"></div>
+      </section>
+
+      <!-- モバイル下部ナビ -->
+      <nav class="mobile-nav" aria-label="モバイルメニュー">
+        <button type="button" class="m-nav-btn active" data-view="live">📺<span>劇場</span></button>
+        <button type="button" class="m-nav-btn" data-view="swipe">⚡<span>仕分け</span></button>
+        <button type="button" class="m-nav-btn" data-view="timeline">💬<span>TL</span></button>
+        <button type="button" class="m-nav-btn" data-view="rush">🔥<span>RUSH</span></button>
+        <button type="button" class="m-nav-btn" data-view="diagrams">🎬<span>図解</span></button>
+        <button type="button" class="m-nav-btn" data-view="notes">📌<span>ノート</span></button>
+      </nav>
+    </main>
+
+    <!-- 右サイドバー：トレンド＆分野別正答率 -->
+    <aside class="sidebar-right">
+      <div class="widget">
+        <h3>📱 スマホ・外出先で開く</h3>
+        <p style="margin:0 0 6px; font-size:0.76rem; color:var(--muted);">いつでもどこでも下記URLからアクセスできます（「ホーム画面に追加」でアプリ化可能）：</p>
+        <code style="display:block; padding:8px; border-radius:8px; background:#0b0e14; color:var(--xblue); font-weight:800; font-size:0.78rem; user-select:all; word-break:break-all;">https://sho3690.github.io/fp3-buzz/</code>
+      </div>
+
+      <div class="widget">
+        <h3>📈 分野別マスター度</h3>
+        <div id="mastery-list" class="mastery-list"></div>
+      </div>
+
+      <div class="widget">
+        <h3>🔥 FP3級 トレンド</h3>
+        <div id="trend-list" class="trend-list"></div>
+      </div>
+
+      <button type="button" class="danger-link" id="btn-reset">データをリセット</button>
+    </aside>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="diagrams.js"></script>
+  <script src="live_episodes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
